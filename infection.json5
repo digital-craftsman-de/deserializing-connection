@@ -1,0 +1,30 @@
+{
+  "$schema": "vendor/infection/infection/resources/schema.json",
+  "source": {
+    "directories": [
+      "src"
+    ]
+  },
+  "mutators": {
+    "@default": true,
+    "IncrementInteger": {
+      "ignore": [
+        "DigitalCraftsman\\DeserializingConnection\\Serializer\\DecodingConnection::decodeItem",
+        "DigitalCraftsman\\DeserializingConnection\\Doctrine\\ArrayNormalizableType::convertToPHPValue"
+      ]
+    },
+    "DecrementInteger": {
+      "ignore": [
+        "DigitalCraftsman\\DeserializingConnection\\Serializer\\DecodingConnection::decodeItem",
+        "DigitalCraftsman\\DeserializingConnection\\Doctrine\\ArrayNormalizableType::convertToPHPValue"
+      ]
+    },
+    "MethodCallRemoval": {
+      "ignore": [
+        "DigitalCraftsman\\DeserializingConnection\\**\\Exception\\**::__construct"
+      ]
+    }
+  },
+  "minMsi": 100,
+  "minCoveredMsi": 100
+}
