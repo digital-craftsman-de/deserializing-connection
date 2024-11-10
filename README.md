@@ -61,7 +61,7 @@ $user = $this->deserializingConnection->getOne(
 );
 ```
 
-In the same manner, there are multiple similar methods:
+These are the offered methods:
 
 - `getOne` to return one object or an exception when no result is found.
 - `findOne` like `getOne`, but returns `null` when no result is found.
