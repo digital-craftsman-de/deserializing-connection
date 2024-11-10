@@ -16,6 +16,11 @@
       "ignore": [
         "DigitalCraftsman\\DeserializingConnection\\Serializer\\DecodingConnection::decodeItem"
       ]
+    },
+    "MethodCallRemoval": {
+      "ignore": [
+        "DigitalCraftsman\\DeserializingConnection\\**\\Exception\\**::__construct"
+      ]
     }
   },
   "minMsi": 100,

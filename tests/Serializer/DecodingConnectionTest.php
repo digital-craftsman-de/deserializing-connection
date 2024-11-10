@@ -10,6 +10,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 
 #[CoversClass(DecodingConnection::class)]
+#[CoversClass(Exception\QueryDidNotReturnExactlyOneResult::class)]
+#[CoversClass(Exception\QueryDidNotReturnAnInt::class)]
+#[CoversClass(Exception\QueryDidNotReturnABoolean::class)]
 final class DecodingConnectionTest extends ConnectionTestCase
 {
     private DecodingConnection $decodingConnection;
@@ -234,6 +237,63 @@ final class DecodingConnectionTest extends ConnectionTestCase
             ],
             'no boolean' => [
                 'expectedResult' => Exception\QueryDidNotReturnABoolean::class,
+                'sql' => <<<'SQL'
+                    SELECT 'bla'
+                    SQL,
+            ],
+            'no result' => [
+                'expectedResult' => Exception\QueryDidNotReturnExactlyOneResult::class,
+                'sql' => <<<'SQL'
+                    WITH empty_table AS (
+                        SELECT 1
+                        WHERE false
+                    )
+                    SELECT *
+                    FROM empty_table
+                    SQL,
+            ],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('fetchIntDataProvider')]
+    public function fetch_int_works(
+        int | string $expectedResult,
+        string $sql,
+    ): void {
+        // -- Act & Assert
+        try {
+            $result = $this->decodingConnection->fetchInt($sql);
+            self::assertSame($expectedResult, $result);
+        } catch (\Throwable $exception) {
+            $result = $exception::class;
+            self::assertSame($expectedResult, $result);
+        }
+    }
+
+    /**
+     * @return array<string, array{
+     *     expectedResult: int | string,
+     *     sql: string,
+     * }>
+     */
+    public static function fetchIntDataProvider(): array
+    {
+        return [
+            'int' => [
+                'expectedResult' => 5,
+                'sql' => <<<'SQL'
+                    SELECT 5
+                    SQL,
+            ],
+            'float' => [
+                'expectedResult' => Exception\QueryDidNotReturnAnInt::class,
+                'sql' => <<<'SQL'
+                    SELECT 4.0
+                    SQL,
+            ],
+            'string' => [
+                'expectedResult' => Exception\QueryDidNotReturnAnInt::class,
                 'sql' => <<<'SQL'
                     SELECT 'bla'
                     SQL,

@@ -61,13 +61,28 @@ final readonly class DecodingConnection
     /**
      * @param list<mixed>|array<string, mixed>                                     $parameters
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     *
+     * @throws Exception\QueryDidNotReturnExactlyOneResult
+     * @throws Exception\QueryDidNotReturnAnInt
      */
     public function fetchInt(
         string $sql,
         array $parameters = [],
         array $parameterTypes = [],
     ): int {
-        return (int) $this->connection->fetchOne($sql, $parameters, $parameterTypes);
+        /** @var array<int, mixed> $result */
+        $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+
+        if (count($result) !== 1) {
+            throw new Exception\QueryDidNotReturnExactlyOneResult();
+        }
+
+        $value = $result[0];
+        if (!is_int($value)) {
+            throw new Exception\QueryDidNotReturnAnInt();
+        }
+
+        return $value;
     }
 
     /**

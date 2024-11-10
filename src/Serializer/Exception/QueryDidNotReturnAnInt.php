@@ -7,10 +7,10 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer\Exception;
 /**
  * @psalm-immutable
  */
-final class QueryDidNotReturnABoolean extends \DomainException
+final class QueryDidNotReturnAnInt extends \DomainException
 {
     public function __construct()
     {
-        parent::__construct('The query did not return a bool.');
+        parent::__construct('The query did not return a int.');
     }
 }
