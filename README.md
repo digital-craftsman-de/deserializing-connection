@@ -66,7 +66,7 @@ These are the offered methods:
 - `getOne` to return one object or an exception when no result is found.
 - `findOne` like `getOne`, but returns `null` when no result is found.
 - `findArray` to return an array of objects.
-- `findGenerator` like `findArray`, but returns a generator that yields the objects (when total size is a topic).
+- `findGenerator` to return a generator that yields the objects.
 
 ### Decoding types
 
