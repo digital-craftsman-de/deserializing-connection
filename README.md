@@ -89,7 +89,7 @@ When you want to get a scalar value or do more complex stuff, you can use the un
 - `fetchInt`
 - `fetchBool`
 
-The last two will throw custom exceptions when there are no values or they are not of the expected type.
+`fetchInt` and `fetchBool` will throw custom exceptions when there are no values or they are not of the expected type.
 
 ## Additional documentation
 
