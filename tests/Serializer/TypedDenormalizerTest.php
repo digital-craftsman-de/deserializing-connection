@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
 use DigitalCraftsman\DeserializingConnection\Test\DTO\User;
+use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectIdList;
+use DigitalCraftsman\Ids\Serializer\IdListNormalizer;
 use DigitalCraftsman\Ids\Serializer\IdNormalizer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,6 +32,7 @@ final class TypedDenormalizerTest extends TestCase
             new Serializer(
                 normalizers: [
                     new IdNormalizer(),
+                    new IdListNormalizer(),
                     new ArrayDenormalizer(),
                     new PropertyNormalizer(
                         propertyTypeExtractor: new PropertyInfoExtractor(
@@ -54,6 +57,7 @@ final class TypedDenormalizerTest extends TestCase
         $data = [
             'userId' => '1a493034-c5e0-4414-a9b7-ca414b884719',
             'name' => 'John Doe',
+            'accessibleProjects' => [],
         ];
 
         // -- Act
@@ -62,6 +66,7 @@ final class TypedDenormalizerTest extends TestCase
         // -- Assert
         self::assertEquals('1a493034-c5e0-4414-a9b7-ca414b884719', $user->userId);
         self::assertSame('John Doe', $user->name);
+        self::assertEquals(ProjectIdList::emptyList(), $user->accessibleProjects);
     }
 
     #[Test]
@@ -72,10 +77,12 @@ final class TypedDenormalizerTest extends TestCase
             [
                 'userId' => '1a493034-c5e0-4414-a9b7-ca414b884719',
                 'name' => 'John Doe',
+                'accessibleProjects' => [],
             ],
             [
                 'userId' => '42a4d8b0-73ff-42da-88cc-8dd96fa2f170',
                 'name' => 'Jane Doe',
+                'accessibleProjects' => [],
             ],
         ];
 
@@ -86,5 +93,6 @@ final class TypedDenormalizerTest extends TestCase
         self::assertCount(2, $users);
         self::assertEquals('1a493034-c5e0-4414-a9b7-ca414b884719', $users[0]->userId);
         self::assertSame('John Doe', $users[0]->name);
+        self::assertEquals(ProjectIdList::emptyList(), $users[0]->accessibleProjects);
     }
 }
