@@ -89,7 +89,7 @@ final readonly class DeserializingConnection
      *
      * @return list<T>
      */
-    public function fetchArray(
+    public function findArray(
         string $sql,
         string $class,
         array $parameters = [],
@@ -118,7 +118,7 @@ final readonly class DeserializingConnection
      *
      * @return \Generator<int, T>
      */
-    public function fetchGenerator(
+    public function findGenerator(
         string $sql,
         string $class,
         array $parameters = [],
