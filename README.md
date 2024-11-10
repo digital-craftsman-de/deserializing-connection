@@ -15,7 +15,7 @@ As it's a central part of an application, it's tested thoroughly (including muta
 Install package through composer:
 
 ```shell
-composer require digital-craftsman/deserializing-connection:0.1.*
+composer require digital-craftsman/deserializing-connection:0.1.*-alpha.1
 ```
 
 > ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.1.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
