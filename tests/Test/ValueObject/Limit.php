@@ -12,7 +12,7 @@ final readonly class Limit implements IntNormalizable
         public int $limit,
     ) {
         if ($this->limit < 0) {
-            throw new \InvalidArgumentException('Limit can not be negative');
+            throw new \InvalidArgumentException('The limit can not be negative');
         }
         if ($this->limit > 1_000) {
             throw new \InvalidArgumentException('The limit can not be greater than 1000');

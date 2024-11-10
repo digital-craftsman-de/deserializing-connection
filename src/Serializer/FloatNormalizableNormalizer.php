@@ -7,12 +7,12 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
-final class IntNormalizableNormalizer implements NormalizerInterface, DenormalizerInterface
+final class FloatNormalizableNormalizer implements NormalizerInterface, DenormalizerInterface
 {
     #[\Override]
     public function supportsNormalization(mixed $data, string $format = null, array $context = []): bool
     {
-        return $data instanceof IntNormalizable;
+        return $data instanceof FloatNormalizable;
     }
 
     /** @param class-string $type */
@@ -20,26 +20,27 @@ final class IntNormalizableNormalizer implements NormalizerInterface, Denormaliz
     public function supportsDenormalization(mixed $data, string $type, ?string $format = null, array $context = []): bool
     {
         return class_exists($type)
-            && is_subclass_of($type, IntNormalizable::class);
+            && is_subclass_of($type, FloatNormalizable::class);
     }
 
-    /** @param IntNormalizable|null $object */
+    /** @param FloatNormalizable|null $object */
     #[\Override]
-    public function normalize(mixed $object, string $format = null, array $context = []): ?int
+    public function normalize(mixed $object, string $format = null, array $context = []): ?float
     {
         if ($object === null) {
             return null;
         }
 
+        /** @var FloatNormalizable $object */
         return $object->normalize();
     }
 
     /**
-     * @param int|null                      $data
-     * @param class-string<IntNormalizable> $type
+     * @param float|null                      $data
+     * @param class-string<FloatNormalizable> $type
      */
     #[\Override]
-    public function denormalize(mixed $data, string $type, string $format = null, array $context = []): ?IntNormalizable
+    public function denormalize(mixed $data, string $type, string $format = null, array $context = []): ?FloatNormalizable
     {
         if ($data === null) {
             return null;
@@ -51,13 +52,13 @@ final class IntNormalizableNormalizer implements NormalizerInterface, Denormaliz
     /**
      * @codeCoverageIgnore
      *
-     * @return array<string, bool|null>
+     * @return array<class-string, bool>
      */
     #[\Override]
     public function getSupportedTypes(?string $format): array
     {
         return [
-            IntNormalizable::class => true,
+            FloatNormalizable::class => true,
         ];
     }
 }
