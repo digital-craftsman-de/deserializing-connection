@@ -91,11 +91,11 @@ verify: php-code-validation php-tests php-mutation-testing
 
 ## php-tests			Run the tests for all relevant PHP versions.
 .PHONY: php-tests
-php-tests: php-8.3-tests php-8.4-tests
+php-tests: php-8.3-tests
 
 ## php-tests-coverage			Run the tests for all relevant PHP versions including coverage report as HTML.
 .PHONY: php-tests-coverage
-php-tests-coverage: php-8.4-tests-html-coverage
+php-tests-coverage: php-8.3-tests-html-coverage
 
 ## php-8.3-tests			Run tests with PHP 8.3.
 .PHONY: php-8.3-tests
@@ -146,4 +146,4 @@ php-8.4-tests-ci:
 ## php-mutation-testing-ci	Run mutation testing for CI.
 .PHONY: php-mutation-testing-ci
 php-mutation-testing-ci:
-	docker compose run --rm php-8.4 ./vendor/bin/infection --only-covered --threads=max
+	docker compose run --rm php-8.3 ./vendor/bin/infection --only-covered --threads=max
