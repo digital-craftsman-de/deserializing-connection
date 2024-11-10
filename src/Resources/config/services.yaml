@@ -1,0 +1,13 @@
+services:
+
+  DigitalCraftsman\DeserializingConnection\Serializer\DeserializingConnection:
+    autowire: true
+    autoconfigure: true
+
+  DigitalCraftsman\DeserializingConnection\Serializer\DecodingConnection:
+    autowire: true
+    autoconfigure: true
+
+  DigitalCraftsman\DeserializingConnection\Serializer\TypedDenormalizer:
+    autowire: true
+    autoconfigure: true
