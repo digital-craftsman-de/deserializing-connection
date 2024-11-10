@@ -91,6 +91,16 @@ When you want to get a scalar value or do more complex stuff, you can use the un
 
 `fetchInt` and `fetchBool` will throw custom exceptions when there are no values or they are not of the expected type.
 
+### Normalizers
+
+To make the normalization process easier, there are the following normalizers included:
+
+- `StringNormalizableNormalizer`
+- `IntNormalizableNormalizer`
+- `ArrayNormalizableNormalizer`
+
+Additionally, there is an interface for each of the normalizers. Every class that implements one of the interfaces, will be automatically normalized to the respected type. This means putting the logic of how serialization of a class works within the class. That's not really seen as a good practice. In my experience, the data structure and the normalization need to be changed together. So, I like it better to have both in one place. I've used this approach in multiple large scale projects for years and haven't had a single issue with it yet. But your mileage may vary.
+
 ## Additional documentation
 
 - [Changelog](./CHANGELOG.md)
