@@ -70,7 +70,7 @@ These are the offered methods:
 
 ### Decoding types
 
-Part of the magic is the conversion from database types to PHP types. When the SQL for example returns a JSON string, you usually need to convert it into an associative array first. To tackle this here, you just need to supply `decoderTypes` with the column name and the type of decoder you want to use. There are utilities that can handle nullable values or create a empty array when a JSON returns null (relevant for `jsonb_agg` calls). These are the available decoder types which are all pretty self explanatory:
+Part of the magic is the conversion from database types to PHP types. For example, when your SQL returns a JSON string, you usually need to convert it into an associative array prior to serialization. Here you just need to supply `decoderTypes` with the column name and the type of decoder you want to use. There are utilities that can handle nullable values or create a empty array when a JSON returns null (relevant for `jsonb_agg` calls). These are the available decoder types which are all pretty self-explanatory:
 
 - `INT`
 - `NULLABLE_INT`
