@@ -73,13 +73,28 @@ final readonly class DecodingConnection
     /**
      * @param list<mixed>|array<string, mixed>                                     $parameters
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     *
+     * @throws Exception\QueryDidNotReturnExactlyOneResult
+     * @throws Exception\QueryDidNotReturnABoolean
      */
     public function fetchBool(
         string $sql,
         array $parameters = [],
         array $parameterTypes = [],
     ): bool {
-        return (bool) $this->connection->fetchOne($sql, $parameters, $parameterTypes);
+        /** @var array<int, mixed> $result */
+        $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+
+        if (count($result) !== 1) {
+            throw new Exception\QueryDidNotReturnExactlyOneResult();
+        }
+
+        $value = $result[0];
+        if (!is_bool($value)) {
+            throw new Exception\QueryDidNotReturnABoolean();
+        }
+
+        return $value;
     }
 
     /**

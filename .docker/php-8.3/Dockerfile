@@ -8,7 +8,8 @@ RUN apk add --update \
     g++ \
     make \
     linux-headers \
-    curl
+    curl \
+    postgresql-client
 
 # Add php extensions
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
@@ -16,6 +17,10 @@ RUN chmod uga+x /usr/local/bin/install-php-extensions && sync
 
 # Debugging
 RUN install-php-extensions xdebug
+
+# Postgres
+RUN install-php-extensions pgsql
+RUN install-php-extensions pdo_pgsql
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
     ln -s $(composer config --global home) /root/composer
