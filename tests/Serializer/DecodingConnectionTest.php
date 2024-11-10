@@ -26,7 +26,7 @@ final class DecodingConnectionTest extends ConnectionTestCase
     #[Test]
     #[DataProvider('fetchBoolDataProvider')]
     public function fetch_bool_works(
-        bool|string $expectedResult,
+        bool | string $expectedResult,
         string $sql,
     ): void {
         // -- Act & Assert

@@ -16,6 +16,9 @@ abstract class ConnectionTestCase extends TestCase
     {
         parent::setUp();
 
+        /**
+         * @psalm-suppress InvalidArgument
+         */
         $this->connection = DriverManager::getConnection([
             'user' => getenv('DB_USER'),
             'password' => getenv('DB_PASSWORD'),
