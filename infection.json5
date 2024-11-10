@@ -7,6 +7,16 @@
   },
   "mutators": {
     "@default": true,
+    "IncrementInteger": {
+      "ignore": [
+        "DigitalCraftsman\\DeserializingConnection\\Serializer\\DecodingConnection::decodeItem"
+      ]
+    },
+    "DecrementInteger": {
+      "ignore": [
+        "DigitalCraftsman\\DeserializingConnection\\Serializer\\DecodingConnection::decodeItem"
+      ]
+    }
   },
   "minMsi": 100,
   "minCoveredMsi": 100

@@ -126,7 +126,7 @@ php-code-validation:
 ## php-mutation-testing		Run mutation testing with default PHP version (8.3).
 .PHONY: php-mutation-testing
 php-mutation-testing:
-	docker compose run --rm php-8.4 ./vendor/bin/infection --show-mutations --only-covered --threads=8
+	docker compose run --rm php-8.3 ./vendor/bin/infection --show-mutations --only-covered --threads=8
 
 ##
 ## CI

@@ -24,6 +24,95 @@ final class DecodingConnectionTest extends ConnectionTestCase
     }
 
     #[Test]
+    public function decode_item_works(): void
+    {
+        // -- Arrange
+        $item = [
+            'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+            'name' => 'John Doe',
+
+            'int' => '1',
+
+            'nullableInt' => null,
+            'nullableIntWithValue' => '2',
+
+            'float' => '3',
+
+            'nullableFloat' => null,
+            'nullableFloatWithValue' => '4',
+
+            'json' => '{"userId": "8c4b339b-75f4-499d-bf3a-56547b212aae", "name": "John Doe"}',
+
+            'nullableJson' => null,
+            'nullableJsonWithValue' => '{"userId": "8c4b339b-75f4-499d-bf3a-56547b212aae", "name": "John Doe"}',
+
+            'jsonWithEmptyArrayOnNull' => null,
+            'jsonWithEmptyArrayOnNullWithValue' => '["fdf7d3f4-7c17-4917-b637-d8baf13f2b07", "b3b3b3b3-7c17-4917-b637-d8baf13f2b07"]',
+        ];
+        $decoderTypes = [
+            'int' => DTO\DecoderType::INT,
+
+            'nullableInt' => DTO\DecoderType::NULLABLE_INT,
+            'nullableIntWithValue' => DTO\DecoderType::NULLABLE_INT,
+
+            'float' => DTO\DecoderType::FLOAT,
+
+            'nullableFloat' => DTO\DecoderType::NULLABLE_FLOAT,
+            'nullableFloatWithValue' => DTO\DecoderType::NULLABLE_FLOAT,
+
+            'json' => DTO\DecoderType::JSON,
+
+            'nullableJson' => DTO\DecoderType::NULLABLE_JSON,
+            'nullableJsonWithValue' => DTO\DecoderType::NULLABLE_JSON,
+
+            'jsonWithEmptyArrayOnNull' => DTO\DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL,
+            'jsonWithEmptyArrayOnNullWithValue' => DTO\DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                'name' => 'John Doe',
+
+                'int' => 1,
+
+                'nullableInt' => null,
+                'nullableIntWithValue' => 2,
+
+                'float' => 3.0,
+
+                'nullableFloat' => null,
+                'nullableFloatWithValue' => 4.0,
+
+                'json' => [
+                    'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                    'name' => 'John Doe',
+                ],
+
+                'nullableJson' => null,
+                'nullableJsonWithValue' => [
+                    'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                    'name' => 'John Doe',
+                ],
+
+                'jsonWithEmptyArrayOnNull' => [],
+                'jsonWithEmptyArrayOnNullWithValue' => [
+                    'fdf7d3f4-7c17-4917-b637-d8baf13f2b07',
+                    'b3b3b3b3-7c17-4917-b637-d8baf13f2b07',
+                ],
+            ],
+            $item,
+        );
+    }
+
+    #[Test]
     #[DataProvider('fetchAssociativeDataProvider')]
     public function fetch_associative_works(
         ?array $expectedResult,

@@ -121,7 +121,7 @@ final readonly class DecodingConnection
      *
      * @internal
      */
-    private static function decodeItem(
+    public static function decodeItem(
         array &$item,
         array $decoderTypes,
     ): void {
