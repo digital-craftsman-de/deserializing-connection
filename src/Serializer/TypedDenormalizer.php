@@ -52,7 +52,7 @@ final readonly class TypedDenormalizer
     /**
      * @internal
      */
-    public static function arrayOfClass(string $class): string
+    private static function arrayOfClass(string $class): string
     {
         return sprintf('%s[]', $class);
     }
