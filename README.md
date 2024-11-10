@@ -106,6 +106,7 @@ Additionally, there is an interface for each of the normalizers. Every class tha
 When using the normalizers, you can also use the same logic for doctrine types. Simply create a new doctrine type extending of one of the following types and register them:
 
 - `StringNormalizableType`
+- `StringEnumType`
 - `IntNormalizableType`
 - `ArrayNormalizableType`
 
