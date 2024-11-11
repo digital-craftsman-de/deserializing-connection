@@ -22,13 +22,15 @@ final class FloatNormalizableTypeTest extends TestCase
         $platform = new PostgreSQLPlatform();
 
         $value = new Range(0.5);
+        $data = '0.5';
 
         // -- Act
         $databaseValue = $doctrineType->convertToDatabaseValue($value, $platform);
-        $convertedValue = $doctrineType->convertToPHPValue($databaseValue, $platform);
+        $convertedValue = $doctrineType->convertToPHPValue($data, $platform);
 
         // -- Assert
         self::assertEquals($value, $convertedValue);
+        self::assertEquals((float) $data, $databaseValue);
     }
 
     #[Test]

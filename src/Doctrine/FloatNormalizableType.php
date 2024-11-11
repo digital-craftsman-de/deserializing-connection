@@ -24,7 +24,9 @@ abstract class FloatNormalizableType extends Type
         return $platform->getFloatDeclarationSQL($column);
     }
 
-    /** @param ?float $value */
+    /**
+     * @param float|string|null $value
+     */
     #[\Override]
     public function convertToPHPValue($value, AbstractPlatform $platform): ?FloatNormalizable
     {
@@ -35,7 +37,7 @@ abstract class FloatNormalizableType extends Type
         /** @var class-string<FloatNormalizable> $class */
         $class = static::getClass();
 
-        return $class::denormalize($value);
+        return $class::denormalize((float) $value);
     }
 
     /** @param ?FloatNormalizable $value */
