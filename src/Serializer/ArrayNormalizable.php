@@ -6,7 +6,7 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
 interface ArrayNormalizable
 {
-    public static function denormalize(array $array): self;
+    public static function denormalize(array $data): self;
 
     public function normalize(): array;
 }

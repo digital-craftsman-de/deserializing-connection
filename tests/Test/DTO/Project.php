@@ -21,13 +21,13 @@ final readonly class Project implements ArrayNormalizable
      * @param array{
      *     projectId: string,
      *      name: string,
-     * } $array
+     * } $data
      */
-    public static function denormalize(array $array): self
+    public static function denormalize(array $data): self
     {
         return new self(
-            projectId: ProjectId::fromString($array['projectId']),
-            name: $array['name'],
+            projectId: ProjectId::fromString($data['projectId']),
+            name: $data['name'],
         );
     }
 

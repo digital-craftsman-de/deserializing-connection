@@ -22,9 +22,9 @@ final readonly class Limit implements IntNormalizable
     // -- Int normalizable
 
     #[\Override]
-    public static function denormalize(int $int): self
+    public static function denormalize(int $data): self
     {
-        return new self($int);
+        return new self($data);
     }
 
     #[\Override]

@@ -22,9 +22,9 @@ final readonly class Range implements FloatNormalizable
     // -- Float normalizable
 
     #[\Override]
-    public static function denormalize(float $float): self
+    public static function denormalize(float $data): self
     {
-        return new self($float);
+        return new self($data);
     }
 
     #[\Override]
