@@ -22,9 +22,9 @@ final readonly class SearchTerm implements StringNormalizable
     // -- String normalizable
 
     #[\Override]
-    public static function denormalize(string $string): self
+    public static function denormalize(string $data): self
     {
-        return new self($string);
+        return new self($data);
     }
 
     #[\Override]

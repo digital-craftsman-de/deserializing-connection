@@ -6,7 +6,7 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
 interface StringNormalizable
 {
-    public static function denormalize(string $string): self;
+    public static function denormalize(string $data): self;
 
     public function normalize(): string;
 }

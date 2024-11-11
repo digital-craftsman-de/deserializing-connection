@@ -6,7 +6,7 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
 interface FloatNormalizable
 {
-    public static function denormalize(float $float): self;
+    public static function denormalize(float $data): self;
 
     public function normalize(): float;
 }

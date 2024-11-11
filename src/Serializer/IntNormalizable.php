@@ -6,7 +6,7 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
 interface IntNormalizable
 {
-    public static function denormalize(int $int): self;
+    public static function denormalize(int $data): self;
 
     public function normalize(): int;
 }
