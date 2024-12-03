@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Test\ValueObject;
 
-use DigitalCraftsman\DeserializingConnection\Serializer\StringNormalizable;
+use DigitalCraftsman\SelfAwareNormalizers\Serializer\StringNormalizable;
 
 final readonly class SearchTerm implements StringNormalizable
 {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Test\Doctrine;
 
-use DigitalCraftsman\DeserializingConnection\Doctrine\ArrayNormalizableType;
 use DigitalCraftsman\DeserializingConnection\Test\DTO\Project;
+use DigitalCraftsman\SelfAwareNormalizers\Doctrine\ArrayNormalizableType;
 
 final class ProjectType extends ArrayNormalizableType
 {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Test\ValueObject;
 
-use DigitalCraftsman\DeserializingConnection\Serializer\FloatNormalizable;
+use DigitalCraftsman\SelfAwareNormalizers\Serializer\FloatNormalizable;
 
 final readonly class Range implements FloatNormalizable
 {

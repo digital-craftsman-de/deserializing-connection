@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Test\Doctrine;
 
-use DigitalCraftsman\DeserializingConnection\Doctrine\IntNormalizableType;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\Limit;
+use DigitalCraftsman\SelfAwareNormalizers\Doctrine\IntNormalizableType;
 
 final class LimitType extends IntNormalizableType
 {

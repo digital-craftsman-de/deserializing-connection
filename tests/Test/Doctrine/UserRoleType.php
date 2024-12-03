@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Test\Doctrine;
 
-use DigitalCraftsman\DeserializingConnection\Doctrine\StringEnumType;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\UserRole;
+use DigitalCraftsman\SelfAwareNormalizers\Doctrine\StringEnumType;
 
 final class UserRoleType extends StringEnumType
 {

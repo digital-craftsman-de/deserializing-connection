@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Test\Doctrine;
 
-use DigitalCraftsman\DeserializingConnection\Doctrine\StringNormalizableType;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\SearchTerm;
+use DigitalCraftsman\SelfAwareNormalizers\Doctrine\StringNormalizableType;
 
 final class SearchTermType extends StringNormalizableType
 {
