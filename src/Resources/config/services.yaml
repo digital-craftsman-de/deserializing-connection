@@ -11,15 +11,3 @@ services:
   DigitalCraftsman\DeserializingConnection\Serializer\TypedDenormalizer:
     autowire: true
     autoconfigure: true
-
-  DigitalCraftsman\DeserializingConnection\Serializer\StringNormalizableNormalizer:
-    tags: [ { name: 'serializer.normalizer' } ]
-
-  DigitalCraftsman\DeserializingConnection\Serializer\IntNormalizableNormalizer:
-    tags: [ { name: 'serializer.normalizer' } ]
-
-  DigitalCraftsman\DeserializingConnection\Serializer\FloatNormalizableNormalizer:
-    tags: [ { name: 'serializer.normalizer' } ]
-
-  DigitalCraftsman\DeserializingConnection\Serializer\ArrayNormalizableNormalizer:
-    tags: [ { name: 'serializer.normalizer' } ]

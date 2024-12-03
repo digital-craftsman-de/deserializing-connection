@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Test\DTO;
 
-use DigitalCraftsman\DeserializingConnection\Serializer\ArrayNormalizable;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectId;
+use DigitalCraftsman\SelfAwareNormalizers\Serializer\ArrayNormalizable;
 
 final readonly class Project implements ArrayNormalizable
 {

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0
+
+- Replaced own normalizers and doctrine types with the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package.
+
 ## 0.2.1
 
 - Fixed `FloatNormalizableType` that expected a `float` but will receive a `string` from the database instead.

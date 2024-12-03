@@ -12,6 +12,7 @@ use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectIdList;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\UserId;
 use DigitalCraftsman\Ids\Serializer\IdListNormalizer;
 use DigitalCraftsman\Ids\Serializer\IdNormalizer;
+use DigitalCraftsman\SelfAwareNormalizers\Serializer\ArrayNormalizableNormalizer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
@@ -38,6 +39,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                     new IdNormalizer(),
                     new IdListNormalizer(),
                     new ArrayDenormalizer(),
+                    new ArrayNormalizableNormalizer(),
                     new PropertyNormalizer(
                         propertyTypeExtractor: new PropertyInfoExtractor(
                             typeExtractors: [

@@ -4,7 +4,7 @@ A Symfony bundle to get DTOs directly from the database. It's a simple and effic
 
 As it's a central part of an application, it's tested thoroughly (including mutation testing).
 
-[![Latest Stable Version](https://img.shields.io/badge/stable-0.2.1-blue)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
+[![Latest Stable Version](https://img.shields.io/badge/stable-0.3.0-blue)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
 [![PHP Version Require](https://img.shields.io/badge/php-8.3|8.4-5b5d95)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
 [![codecov](https://codecov.io/gh/digital-craftsman-de/deserializing-connection/branch/main/graph/badge.svg?token=BL0JKZYLBG)](https://codecov.io/gh/digital-craftsman-de/deserializing-connection)
 ![Packagist Downloads](https://img.shields.io/packagist/dt/digital-craftsman/deserializing-connection)
@@ -18,7 +18,7 @@ Install package through composer:
 composer require digital-craftsman/deserializing-connection
 ```
 
-> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.2.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
+> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.3.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
 
 ## Usage
 
@@ -95,26 +95,11 @@ When you want to get a scalar value or do more complex stuff, you can use the un
 
 ### Normalizers
 
-To make the normalization process easier, there are the following normalizers included:
-
-- `StringNormalizableNormalizer`
-- `IntNormalizableNormalizer`
-- `FloatNormalizableNormalizer`
-- `ArrayNormalizableNormalizer`
-
-Additionally, there is an interface for each of the normalizers. Every class that implements one of the interfaces, will be automatically normalized to the respected type. This means putting the logic of how serialization of a class works within the class. That's not really seen as a good practice. In my experience, the data structure and the normalization need to be changed together. So, I like it better to have both in one place. I've used this approach in multiple large scale projects for years and haven't had a single issue with it yet. But your mileage may vary.
+For easier normalization, use the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package which is required by this package.
 
 ### Doctrine types
 
-When using the normalizers, you can also use the same logic for doctrine types. Simply create a new doctrine type extending of one of the following types and register them:
-
-- `StringNormalizableType`
-- `StringEnumType`
-- `IntNormalizableType`
-- `FloatNormalizableType`
-- `ArrayNormalizableType`
-
-As an added bonus, this makes sure, that the structure is always the same no matter if you're using Doctrine to read from the data or a normalizer.
+For easier doctrine types, use the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package which is required by this package.
 
 ## Additional documentation
 
