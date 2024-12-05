@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Allowed for `digital-craftsman/self-aware-normalizers:^0.2.0`.
+
 ## 0.3.0
 
 - Replaced own normalizers and doctrine types with the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package.

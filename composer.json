@@ -7,7 +7,7 @@
     "symfony/framework-bundle": "^7.1",
     "symfony/serializer": "^7.1",
     "doctrine/dbal": "^3.3.6",
-    "digital-craftsman/self-aware-normalizers": "^0.1.0"
+    "digital-craftsman/self-aware-normalizers": "^0.1.0|^0.2.0"
   },
   "require-dev": {
     "vimeo/psalm": "^5.25",
