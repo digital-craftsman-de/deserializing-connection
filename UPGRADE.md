@@ -1,5 +1,9 @@
 # Upgrade guide
 
+## From 0.3.* to 0.4.0
+
+Nothing to do.
+
 ## From 0.2.* to 0.3.0
 
 ### Replace normalizers and doctrine types

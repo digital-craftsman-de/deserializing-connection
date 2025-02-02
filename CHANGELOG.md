@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+
+- Added full support for PHP 8.4 including dependencies.
+
 ## 0.3.1
 
 - Allowed for `digital-craftsman/self-aware-normalizers:^0.2.0`.
