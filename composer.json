@@ -7,16 +7,16 @@
     "symfony/framework-bundle": "^7.1",
     "symfony/serializer": "^7.1",
     "doctrine/dbal": "^3.3.6",
-    "digital-craftsman/self-aware-normalizers": "^0.1.0|^0.2.0"
+    "digital-craftsman/self-aware-normalizers": "^0.3.0"
   },
   "require-dev": {
-    "vimeo/psalm": "^5.25",
-    "friendsofphp/php-cs-fixer": "^v3.59.3",
+    "vimeo/psalm": "^6.0.0",
+    "friendsofphp/php-cs-fixer": "^v3.68.5",
     "phpunit/phpunit": "^10.5",
-    "infection/infection": "0.27.*",
+    "infection/infection": "0.29.*",
     "symfony/property-access": "^7.1",
     "symfony/property-info": "^7.1",
-    "digital-craftsman/ids": "^1.3"
+    "digital-craftsman/ids": "^2.0.1"
   },
   "autoload": {
     "psr-4": {

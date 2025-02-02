@@ -6,8 +6,8 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
 use DigitalCraftsman\DeserializingConnection\Test\DTO\User;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectIdList;
-use DigitalCraftsman\Ids\Serializer\IdListNormalizer;
-use DigitalCraftsman\Ids\Serializer\IdNormalizer;
+use DigitalCraftsman\SelfAwareNormalizers\Serializer\ArrayNormalizableNormalizer;
+use DigitalCraftsman\SelfAwareNormalizers\Serializer\StringNormalizableNormalizer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -31,8 +31,8 @@ final class TypedDenormalizerTest extends TestCase
         $this->typedDenormalizer = new TypedDenormalizer(
             new Serializer(
                 normalizers: [
-                    new IdNormalizer(),
-                    new IdListNormalizer(),
+                    new StringNormalizableNormalizer(),
+                    new ArrayNormalizableNormalizer(),
                     new ArrayDenormalizer(),
                     new PropertyNormalizer(
                         propertyTypeExtractor: new PropertyInfoExtractor(
