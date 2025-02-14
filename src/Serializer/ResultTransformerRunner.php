@@ -81,9 +81,17 @@ final readonly class ResultTransformerRunner
         array $result,
         array &$resultOfLevel,
     ): void {
-        $payload = $transformer->denormalizeResultToClass !== null
-            ? $this->typedDenormalizer->denormalize($resultOfLevel[$levelKey], $transformer->denormalizeResultToClass)
-            : $resultOfLevel[$levelKey];
+        if (!array_key_exists($levelKey, $resultOfLevel)) {
+            throw new Exception\ResultTransformerKeyNotFound($levelKey);
+        }
+
+        if ($resultOfLevel[$levelKey] !== null) {
+            $payload = $transformer->denormalizeResultToClass !== null
+                ? $this->typedDenormalizer->denormalize($resultOfLevel[$levelKey], $transformer->denormalizeResultToClass)
+                : $resultOfLevel[$levelKey];
+        } else {
+            $payload = null;
+        }
 
         $transformedPayload = $transformer->transformer->__invoke($payload, $resultOfLevel, $result);
 
