@@ -11,3 +11,7 @@ services:
   DigitalCraftsman\DeserializingConnection\Serializer\TypedDenormalizer:
     autowire: true
     autoconfigure: true
+
+  DigitalCraftsman\DeserializingConnection\Serializer\ResultTransformerRunner:
+    autowire: true
+    autoconfigure: true
