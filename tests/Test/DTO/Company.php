@@ -26,7 +26,7 @@ final readonly class Company implements ArrayNormalizable
     public static function denormalize(array $data): self
     {
         return new self(
-            companyId: CompanyId::fromString($data['companyId']),
+            companyId: CompanyId::denormalize($data['companyId']),
             name: $data['name'],
         );
     }
@@ -40,7 +40,7 @@ final readonly class Company implements ArrayNormalizable
     public function normalize(): array
     {
         return [
-            'companyId' => (string) $this->companyId,
+            'companyId' => $this->companyId->normalize(),
             'name' => $this->name,
         ];
     }

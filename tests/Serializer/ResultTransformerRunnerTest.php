@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
+use DigitalCraftsman\DeserializingConnection\Test\DTO\AccessToken;
 use DigitalCraftsman\SelfAwareNormalizers\Serializer\ArrayNormalizableNormalizer;
 use DigitalCraftsman\SelfAwareNormalizers\Serializer\StringNormalizableNormalizer;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -18,6 +19,7 @@ use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
 #[CoversClass(ResultTransformerRunner::class)]
+#[CoversClass(Exception\ResultTransformerKeyNotFound::class)]
 final class ResultTransformerRunnerTest extends TestCase
 {
     private ResultTransformerRunner $resultTransformerRunner;
@@ -74,6 +76,30 @@ final class ResultTransformerRunnerTest extends TestCase
 
         // -- Assert
         self::assertSame('JOHN DOE', $result['name']);
+    }
+
+    #[Test]
+    public function run_transformations_fails_when_key_is_not_found(): void
+    {
+        // -- Assert
+        $this->expectException(Exception\ResultTransformerKeyNotFound::class);
+
+        // -- Arrange
+        $result = [
+            'userId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+            'name' => 'John Doe',
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: [
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'project',
+                    transformer: static fn (string $name) => strtoupper($name),
+                ),
+            ],
+        );
     }
 
     #[Test]
@@ -249,5 +275,48 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Assert
         self::assertSame('PROJECT X - 06e030f1-4db8-41bb-9e31-b7cb003bf5a7', $result['projects'][0]['name']);
         self::assertSame('PROJECT Y - 06e030f1-4db8-41bb-9e31-b7cb003bf5a7', $result['projects'][1]['name']);
+    }
+
+    #[Test]
+    public function run_transformations_works_with_array_and_null_values(): void
+    {
+        // -- Arrange
+        $result = [
+            'userId' => '06e030f1-4db8-41bb-9e31-b7cb003bf5a7',
+            'name' => 'John Doe',
+            'projects' => [
+                [
+                    'projectId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+                    'name' => 'Project X',
+                    'accessToken' => [
+                        'token' => '35c9c331-f185-42c6-9952-90150fc56735',
+                        'accessLevel' => 5,
+                    ],
+                ],
+                [
+                    'projectId' => '5c0c0fc7-e0e7-4cfc-9715-21c96dfac6bb',
+                    'name' => 'Project Y',
+                    'accessToken' => null,
+                ],
+            ],
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: [
+                DTO\ResultTransformer::forObjectValue(
+                    key: 'projects.*.accessToken',
+                    denormalizeResultToClass: AccessToken::class,
+                    transformer: static fn (?AccessToken $accessToken) => $accessToken !== null
+                        ? $accessToken->increaseLevel()
+                        : null,
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertSame(6, $result['projects'][0]['accessToken']['accessLevel']);
+        self::assertNull($result['projects'][1]['accessToken']);
     }
 }
