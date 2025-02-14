@@ -23,6 +23,8 @@ use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
 #[CoversClass(DeserializingConnection::class)]
+#[CoversClass(TypedDenormalizer::class)]
+#[CoversClass(DTO\ResultTransformer::class)]
 #[CoversClass(Exception\ElementNotFound::class)]
 final class DeserializingConnectionTest extends ConnectionTestCase
 {
@@ -64,12 +66,14 @@ final class DeserializingConnectionTest extends ConnectionTestCase
     {
         // -- Arrange
         $userIdString = '417df760-0d16-408f-8201-ec7760dee9fb';
+        $staticAdditionalId = ProjectId::fromString('260ca83c-de97-423a-96eb-6a697372ec9e');
         $expectedResult = new User(
             userId: UserId::fromString($userIdString),
-            name: 'John Doe',
+            name: 'JOHN DOE',
             accessibleProjects: new ProjectIdList([
                 ProjectId::fromString('05f620c2-ea64-4012-816f-884310f69dd0'),
                 ProjectId::fromString('91f47435-208d-4344-990b-ae17bd4b13fa'),
+                $staticAdditionalId,
             ]),
         );
 
@@ -88,6 +92,18 @@ final class DeserializingConnectionTest extends ConnectionTestCase
             ],
             decoderTypes: [
                 'accessibleProjects' => DecoderType::JSON,
+            ],
+            resultTransformers: [
+                new DTO\ResultTransformer(
+                    key: 'name',
+                    denormalizeResultToClass: null,
+                    transformer: static fn (string $name): string => strtoupper($name),
+                ),
+                new DTO\ResultTransformer(
+                    key: 'accessibleProjects',
+                    denormalizeResultToClass: ProjectIdList::class,
+                    transformer: static fn (ProjectIdList $ids): ProjectIdList => $ids->addId($staticAdditionalId),
+                ),
             ],
         );
 
