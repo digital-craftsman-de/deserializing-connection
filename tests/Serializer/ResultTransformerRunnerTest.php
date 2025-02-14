@@ -1,0 +1,253 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DigitalCraftsman\DeserializingConnection\Serializer;
+
+use DigitalCraftsman\SelfAwareNormalizers\Serializer\ArrayNormalizableNormalizer;
+use DigitalCraftsman\SelfAwareNormalizers\Serializer\StringNormalizableNormalizer;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
+use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
+use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
+use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
+use Symfony\Component\Serializer\Serializer;
+
+#[CoversClass(ResultTransformerRunner::class)]
+final class ResultTransformerRunnerTest extends TestCase
+{
+    private ResultTransformerRunner $resultTransformerRunner;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $typedDenormalizer = new TypedDenormalizer(
+            new Serializer(
+                normalizers: [
+                    new StringNormalizableNormalizer(),
+                    new ArrayNormalizableNormalizer(),
+                    new ArrayDenormalizer(),
+                    new PropertyNormalizer(
+                        propertyTypeExtractor: new PropertyInfoExtractor(
+                            typeExtractors: [
+                                new PhpDocExtractor(),
+                                new ReflectionExtractor(),
+                            ],
+                        ),
+                    ),
+                ],
+                encoders: [
+                    new JsonEncoder(),
+                ],
+            ),
+        );
+
+        $this->resultTransformerRunner = new ResultTransformerRunner(
+            typedDenormalizer: $typedDenormalizer,
+        );
+    }
+
+    #[Test]
+    public function run_transformations_works_on_one_level(): void
+    {
+        // -- Arrange
+        $result = [
+            'userId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+            'name' => 'John Doe',
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: [
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'name',
+                    transformer: static fn (string $name) => strtoupper($name),
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertSame('JOHN DOE', $result['name']);
+    }
+
+    #[Test]
+    public function run_transformations_works_on_second_level(): void
+    {
+        // -- Arrange
+        $result = [
+            'userId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+            'name' => 'John Doe',
+            'project' => [
+                'projectId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+                'name' => 'Project X',
+            ],
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: [
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'project.name',
+                    transformer: static fn (string $name) => strtoupper($name),
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertSame('PROJECT X', $result['project']['name']);
+    }
+
+    #[Test]
+    public function run_transformations_works_on_third_level(): void
+    {
+        // -- Arrange
+        $result = [
+            'userId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+            'name' => 'John Doe',
+            'project' => [
+                'projectId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+                'name' => 'Project X',
+                'responsible' => [
+                    'userId' => '10ee2b8b-f4fc-4791-8e70-f5a141cd1ad9',
+                    'name' => 'Tony Stark',
+                ],
+            ],
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: [
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'project.responsible.name',
+                    transformer: static fn (string $name) => strtoupper($name),
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertSame('TONY STARK', $result['project']['responsible']['name']);
+    }
+
+    #[Test]
+    public function run_transformations_works_with_array(): void
+    {
+        // -- Arrange
+        $result = [
+            'userId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+            'name' => 'John Doe',
+            'projects' => [
+                [
+                    'projectId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+                    'name' => 'Project X',
+                ],
+                [
+                    'projectId' => '5c0c0fc7-e0e7-4cfc-9715-21c96dfac6bb',
+                    'name' => 'Project Y',
+                ],
+            ],
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: [
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'projects.*.name',
+                    transformer: static function (string $name) {
+                        return strtoupper($name);
+                    },
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertSame('PROJECT X', $result['projects'][0]['name']);
+        self::assertSame('PROJECT Y', $result['projects'][1]['name']);
+    }
+
+    #[Test]
+    public function run_transformations_works_with_array_and_data_of_current_level(): void
+    {
+        // -- Arrange
+        $result = [
+            'userId' => '06e030f1-4db8-41bb-9e31-b7cb003bf5a7',
+            'name' => 'John Doe',
+            'projects' => [
+                [
+                    'projectId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+                    'name' => 'Project X',
+                ],
+                [
+                    'projectId' => '5c0c0fc7-e0e7-4cfc-9715-21c96dfac6bb',
+                    'name' => 'Project Y',
+                ],
+            ],
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: [
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'projects.*.name',
+                    transformer: static fn (string $name, array $resultOfLevel) => sprintf(
+                        '%s - %s',
+                        strtoupper($name),
+                        $resultOfLevel['projectId'],
+                    ),
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertSame('PROJECT X - 399ad4ea-5a85-470e-8283-308a26f9d519', $result['projects'][0]['name']);
+        self::assertSame('PROJECT Y - 5c0c0fc7-e0e7-4cfc-9715-21c96dfac6bb', $result['projects'][1]['name']);
+    }
+
+    #[Test]
+    public function run_transformations_works_with_array_and_data_from_result(): void
+    {
+        // -- Arrange
+        $result = [
+            'userId' => '06e030f1-4db8-41bb-9e31-b7cb003bf5a7',
+            'name' => 'John Doe',
+            'projects' => [
+                [
+                    'projectId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+                    'name' => 'Project X',
+                ],
+                [
+                    'projectId' => '5c0c0fc7-e0e7-4cfc-9715-21c96dfac6bb',
+                    'name' => 'Project Y',
+                ],
+            ],
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: [
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'projects.*.name',
+                    transformer: static fn (string $name, array $resultOfLevel, array $result) => sprintf(
+                        '%s - %s',
+                        strtoupper($name),
+                        $result['userId'],
+                    ),
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertSame('PROJECT X - 06e030f1-4db8-41bb-9e31-b7cb003bf5a7', $result['projects'][0]['name']);
+        self::assertSame('PROJECT Y - 06e030f1-4db8-41bb-9e31-b7cb003bf5a7', $result['projects'][1]['name']);
+    }
+}

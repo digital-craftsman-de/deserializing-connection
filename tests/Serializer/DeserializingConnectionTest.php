@@ -6,7 +6,9 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
 use DigitalCraftsman\DeserializingConnection\Serializer\DTO\DecoderType;
 use DigitalCraftsman\DeserializingConnection\Test\ConnectionTestCase;
+use DigitalCraftsman\DeserializingConnection\Test\DTO\Company;
 use DigitalCraftsman\DeserializingConnection\Test\DTO\User;
+use DigitalCraftsman\DeserializingConnection\Test\ValueObject\CompanyId;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectId;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectIdList;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\UserId;
@@ -58,6 +60,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $this->deserializingConnection = new DeserializingConnection(
             decodingConnection: new DecodingConnection($this->connection),
             typedDenormalizer: $typedDenormalizer,
+            resultTransformerRunner: new ResultTransformerRunner($typedDenormalizer),
         );
     }
 
@@ -75,6 +78,12 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 ProjectId::fromString('91f47435-208d-4344-990b-ae17bd4b13fa'),
                 $staticAdditionalId,
             ]),
+            companies: [
+                new Company(
+                    companyId: CompanyId::fromString('3a3fe751-b621-4baa-a0f1-41b660ca877b'),
+                    name: 'STARK INDUSTRIES',
+                ),
+            ],
         );
 
         // -- Act
@@ -83,7 +92,10 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 SELECT
                     '417df760-0d16-408f-8201-ec7760dee9fb' AS "userId",
                     'John Doe' AS name,
-                    '["05f620c2-ea64-4012-816f-884310f69dd0", "91f47435-208d-4344-990b-ae17bd4b13fa"]' AS "accessibleProjects"
+                    '["05f620c2-ea64-4012-816f-884310f69dd0", "91f47435-208d-4344-990b-ae17bd4b13fa"]' AS "accessibleProjects",
+                    '[
+                        {"companyId": "3a3fe751-b621-4baa-a0f1-41b660ca877b", "name": "Stark Industries"}
+                    ]' AS "companies"
                 WHERE '417df760-0d16-408f-8201-ec7760dee9fb' = :userId
                 SQL,
             class: User::class,
@@ -92,17 +104,21 @@ final class DeserializingConnectionTest extends ConnectionTestCase
             ],
             decoderTypes: [
                 'accessibleProjects' => DecoderType::JSON,
+                'companies' => DecoderType::JSON,
             ],
             resultTransformers: [
-                new DTO\ResultTransformer(
+                DTO\ResultTransformer::forScalarValue(
                     key: 'name',
-                    denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
                 ),
-                new DTO\ResultTransformer(
+                DTO\ResultTransformer::forObjectValue(
                     key: 'accessibleProjects',
                     denormalizeResultToClass: ProjectIdList::class,
                     transformer: static fn (ProjectIdList $ids): ProjectIdList => $ids->addId($staticAdditionalId),
+                ),
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'companies.*.name',
+                    transformer: static fn (string $name): string => strtoupper($name),
                 ),
             ],
         );
@@ -149,6 +165,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 ProjectId::fromString('05f620c2-ea64-4012-816f-884310f69dd0'),
                 ProjectId::fromString('91f47435-208d-4344-990b-ae17bd4b13fa'),
             ]),
+            companies: [],
         );
 
         // -- Act
@@ -157,7 +174,8 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 SELECT
                     '417df760-0d16-408f-8201-ec7760dee9fb' AS "userId",
                     'John Doe' AS name,
-                    '["05f620c2-ea64-4012-816f-884310f69dd0", "91f47435-208d-4344-990b-ae17bd4b13fa"]' AS "accessibleProjects"
+                    '["05f620c2-ea64-4012-816f-884310f69dd0", "91f47435-208d-4344-990b-ae17bd4b13fa"]' AS "accessibleProjects",
+                    '[]' AS "companies"
                 WHERE '417df760-0d16-408f-8201-ec7760dee9fb' = :userId
                 SQL,
             class: User::class,
@@ -166,6 +184,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
             ],
             decoderTypes: [
                 'accessibleProjects' => DecoderType::JSON,
+                'companies' => DecoderType::JSON,
             ],
         );
 
@@ -208,11 +227,13 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                     ProjectId::fromString('05f620c2-ea64-4012-816f-884310f69dd0'),
                     ProjectId::fromString('91f47435-208d-4344-990b-ae17bd4b13fa'),
                 ]),
+                companies: [],
             ),
             new User(
                 userId: UserId::fromString('ef64a500-db7b-49a8-b670-8eca24936688'),
                 name: 'Jane Doe',
                 accessibleProjects: ProjectIdList::emptyList(),
+                companies: [],
             ),
         ];
 
@@ -222,7 +243,8 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 SELECT
                         user_id AS "userId",
                         name,
-                        accessible_projects AS "accessibleProjects"
+                        accessible_projects AS "accessibleProjects",
+                        '[]' AS "companies"
                     FROM (
                         VALUES
                             ('417df760-0d16-408f-8201-ec7760dee9fb', 'John Doe', '["05f620c2-ea64-4012-816f-884310f69dd0", "91f47435-208d-4344-990b-ae17bd4b13fa"]'),
@@ -232,6 +254,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
             class: User::class,
             decoderTypes: [
                 'accessibleProjects' => DecoderType::JSON,
+                'companies' => DecoderType::JSON,
             ],
         );
 
@@ -251,11 +274,13 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                     ProjectId::fromString('05f620c2-ea64-4012-816f-884310f69dd0'),
                     ProjectId::fromString('91f47435-208d-4344-990b-ae17bd4b13fa'),
                 ]),
+                companies: [],
             ),
             new User(
                 userId: UserId::fromString('ef64a500-db7b-49a8-b670-8eca24936688'),
                 name: 'Jane Doe',
                 accessibleProjects: ProjectIdList::emptyList(),
+                companies: [],
             ),
         ];
 
@@ -265,7 +290,8 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 SELECT
                         user_id AS "userId",
                         name,
-                        accessible_projects AS "accessibleProjects"
+                        accessible_projects AS "accessibleProjects",
+                        '[]' AS "companies"
                     FROM (
                         VALUES
                             ('417df760-0d16-408f-8201-ec7760dee9fb', 'John Doe', '["05f620c2-ea64-4012-816f-884310f69dd0", "91f47435-208d-4344-990b-ae17bd4b13fa"]'),
@@ -275,6 +301,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
             class: User::class,
             decoderTypes: [
                 'accessibleProjects' => DecoderType::JSON,
+                'companies' => DecoderType::JSON,
             ],
         );
 
