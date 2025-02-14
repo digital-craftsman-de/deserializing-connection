@@ -160,7 +160,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $userIdString = '417df760-0d16-408f-8201-ec7760dee9fb';
         $expectedResult = new User(
             userId: UserId::fromString($userIdString),
-            name: 'John Doe',
+            name: 'JOHN DOE',
             accessibleProjects: new ProjectIdList([
                 ProjectId::fromString('05f620c2-ea64-4012-816f-884310f69dd0'),
                 ProjectId::fromString('91f47435-208d-4344-990b-ae17bd4b13fa'),
@@ -185,6 +185,12 @@ final class DeserializingConnectionTest extends ConnectionTestCase
             decoderTypes: [
                 'accessibleProjects' => DecoderType::JSON,
                 'companies' => DecoderType::JSON,
+            ],
+            resultTransformers: [
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'name',
+                    transformer: static fn (string $name): string => strtoupper($name),
+                ),
             ],
         );
 
@@ -222,7 +228,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $expectedResult = [
             new User(
                 userId: UserId::fromString('417df760-0d16-408f-8201-ec7760dee9fb'),
-                name: 'John Doe',
+                name: 'JOHN DOE',
                 accessibleProjects: new ProjectIdList([
                     ProjectId::fromString('05f620c2-ea64-4012-816f-884310f69dd0'),
                     ProjectId::fromString('91f47435-208d-4344-990b-ae17bd4b13fa'),
@@ -231,7 +237,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
             ),
             new User(
                 userId: UserId::fromString('ef64a500-db7b-49a8-b670-8eca24936688'),
-                name: 'Jane Doe',
+                name: 'JANE DOE',
                 accessibleProjects: ProjectIdList::emptyList(),
                 companies: [],
             ),
@@ -256,6 +262,12 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'accessibleProjects' => DecoderType::JSON,
                 'companies' => DecoderType::JSON,
             ],
+            resultTransformers: [
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'name',
+                    transformer: static fn (string $name): string => strtoupper($name),
+                ),
+            ],
         );
 
         // -- Assert
@@ -269,7 +281,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $expectedUsers = [
             new User(
                 userId: UserId::fromString('417df760-0d16-408f-8201-ec7760dee9fb'),
-                name: 'John Doe',
+                name: 'JOHN DOE',
                 accessibleProjects: new ProjectIdList([
                     ProjectId::fromString('05f620c2-ea64-4012-816f-884310f69dd0'),
                     ProjectId::fromString('91f47435-208d-4344-990b-ae17bd4b13fa'),
@@ -278,7 +290,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
             ),
             new User(
                 userId: UserId::fromString('ef64a500-db7b-49a8-b670-8eca24936688'),
-                name: 'Jane Doe',
+                name: 'JANE DOE',
                 accessibleProjects: ProjectIdList::emptyList(),
                 companies: [],
             ),
@@ -302,6 +314,12 @@ final class DeserializingConnectionTest extends ConnectionTestCase
             decoderTypes: [
                 'accessibleProjects' => DecoderType::JSON,
                 'companies' => DecoderType::JSON,
+            ],
+            resultTransformers: [
+                DTO\ResultTransformer::forScalarValue(
+                    key: 'name',
+                    transformer: static fn (string $name): string => strtoupper($name),
+                ),
             ],
         );
 

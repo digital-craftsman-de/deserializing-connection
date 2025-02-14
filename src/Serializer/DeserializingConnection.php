@@ -121,10 +121,12 @@ final readonly class DeserializingConnection
             $decoderTypes,
         );
 
-        $this->resultTransformerRunner->runTransformations(
-            result: $result,
-            resultTransformers: $resultTransformers,
-        );
+        foreach ($result as &$resultItem) {
+            $this->resultTransformerRunner->runTransformations(
+                result: $resultItem,
+                resultTransformers: $resultTransformers,
+            );
+        }
 
         return $this->typedDenormalizer->denormalizeArray($result, $class);
     }
@@ -157,10 +159,12 @@ final readonly class DeserializingConnection
             $decoderTypes,
         );
 
-        $this->resultTransformerRunner->runTransformations(
-            result: $result,
-            resultTransformers: $resultTransformers,
-        );
+        foreach ($result as &$resultItem) {
+            $this->resultTransformerRunner->runTransformations(
+                result: $resultItem,
+                resultTransformers: $resultTransformers,
+            );
+        }
 
         foreach ($result as $item) {
             /** @var T */
