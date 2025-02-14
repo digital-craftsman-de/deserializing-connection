@@ -95,8 +95,12 @@ final readonly class ResultTransformerRunner
 
         $transformedPayload = $transformer->transformer->__invoke($payload, $resultOfLevel, $result);
 
-        $resultOfLevel[$levelKey] = $transformer->denormalizeResultToClass !== null
-            ? $this->typedDenormalizer->normalize($transformedPayload)
-            : $transformedPayload;
+        if ($transformedPayload !== null) {
+            $resultOfLevel[$levelKey] = $transformer->denormalizeResultToClass !== null
+                ? $this->typedDenormalizer->normalize($transformedPayload)
+                : $transformedPayload;
+        } else {
+            $resultOfLevel[$levelKey] = $transformedPayload;
+        }
     }
 }
