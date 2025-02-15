@@ -35,6 +35,9 @@ final readonly class ResultTransformer
     }
 
     /**
+     * Configuration for a transformation that denormalizes an object from the result data and normalizes it afterward to an array. It must
+     * be possible to normalize the resulting object.
+     *
      * @param class-string $denormalizeResultToClass
      */
     public static function forObjectValue(
