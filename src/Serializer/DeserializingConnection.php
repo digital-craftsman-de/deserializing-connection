@@ -121,6 +121,7 @@ final readonly class DeserializingConnection
             $decoderTypes,
         );
 
+        // TODO: For all methods: validate name and rename to conflicts
         foreach ($result as &$resultItem) {
             $this->resultTransformerRunner->runTransformations(
                 result: $resultItem,

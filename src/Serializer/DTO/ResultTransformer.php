@@ -7,48 +7,73 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer\DTO;
 final readonly class ResultTransformer
 {
     /**
-     * @param class-string|null                                                    $denormalizeResultToClass
-     * @param \Closure(mixed $payload, array $resultOfLevel, array $result): mixed $transformer
+     * @param class-string|null                                                           $denormalizeResultToClass
+     * @param (\Closure(mixed $payload, array $resultOfLevel, array $result): mixed)|null $transformer
      */
-    public function __construct(
+    private function __construct(
         public ResultTransformerKey $key,
         /**
          * @var class-string|null $denormalizeResultToClass
          */
         public ?string $denormalizeResultToClass,
         /**
-         * @var \Closure(mixed $payload, array $resultOfLevel, array $result): mixed
+         * @var (\Closure(mixed $payload, array $resultOfLevel, array $result): mixed)|null
          */
-        public \Closure $transformer,
+        public ?\Closure $transformer,
+        public bool $isTransformedResultNormalized,
+        public ?string $renameTo,
     ) {
     }
 
-    public static function forScalarValue(
-        string $key,
-        \Closure $transformer,
-    ): self {
-        return new self(
-            key: new ResultTransformerKey($key),
-            denormalizeResultToClass: null,
-            transformer: $transformer,
-        );
-    }
-
     /**
-     * Configuration for a transformation that denormalizes an object from the result data and normalizes it afterward to an array. It must
-     * be possible to normalize the resulting object.
-     *
-     * @param class-string $denormalizeResultToClass
+     * @param class-string|null                                                    $denormalizeResultToClass
+     * @param \Closure(mixed $payload, array $resultOfLevel, array $result): mixed $transformer
      */
-    public static function forObjectValue(
+    public static function withTransformation(
         string $key,
-        string $denormalizeResultToClass,
+        ?string $denormalizeResultToClass,
         \Closure $transformer,
+        bool $isTransformedResultNormalized,
     ): self {
         return new self(
             key: new ResultTransformerKey($key),
             denormalizeResultToClass: $denormalizeResultToClass,
             transformer: $transformer,
+            isTransformedResultNormalized: $isTransformedResultNormalized,
+            renameTo: null,
+        );
+    }
+
+    public static function withRenaming(
+        string $key,
+        string $renameTo,
+    ): self {
+        return new self(
+            key: new ResultTransformerKey($key),
+            denormalizeResultToClass: null,
+            transformer: null,
+            isTransformedResultNormalized: false,
+            renameTo: $renameTo,
+        );
+    }
+
+    /**
+     * @param class-string|null                                                    $denormalizeResultToClass
+     * @param \Closure(mixed $payload, array $resultOfLevel, array $result): mixed $transformer
+     */
+    public static function withTransformationAndRenaming(
+        string $key,
+        ?string $denormalizeResultToClass,
+        \Closure $transformer,
+        bool $isTransformedResultNormalized,
+        string $renameTo,
+    ): self {
+        return new self(
+            key: new ResultTransformerKey($key),
+            denormalizeResultToClass: $denormalizeResultToClass,
+            transformer: $transformer,
+            isTransformedResultNormalized: $isTransformedResultNormalized,
+            renameTo: $renameTo,
         );
     }
 }

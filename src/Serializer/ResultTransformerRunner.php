@@ -85,18 +85,26 @@ final readonly class ResultTransformerRunner
             throw new Exception\ResultTransformerKeyNotFound($levelKey);
         }
 
-        if ($resultOfLevel[$levelKey] !== null) {
-            $payload = $transformer->denormalizeResultToClass !== null
-                ? $this->typedDenormalizer->denormalize($resultOfLevel[$levelKey], $transformer->denormalizeResultToClass)
-                : $resultOfLevel[$levelKey];
-        } else {
-            $payload = null;
+        if ($transformer->transformer !== null) {
+            if ($resultOfLevel[$levelKey] !== null) {
+                $payload = $transformer->denormalizeResultToClass !== null
+                    ? $this->typedDenormalizer->denormalize($resultOfLevel[$levelKey], $transformer->denormalizeResultToClass)
+                    : $resultOfLevel[$levelKey];
+            } else {
+                $payload = null;
+            }
+
+            $transformedPayload = $transformer->transformer->__invoke($payload, $resultOfLevel, $result);
+
+            $resultOfLevel[$levelKey] = $transformer->isTransformedResultNormalized
+                && $transformedPayload !== null
+                ? $this->typedDenormalizer->normalize($transformedPayload)
+                : $transformedPayload;
         }
 
-        $transformedPayload = $transformer->transformer->__invoke($payload, $resultOfLevel, $result);
-
-        $resultOfLevel[$levelKey] = is_object($transformedPayload)
-            ? $this->typedDenormalizer->normalize($transformedPayload)
-            : $transformedPayload;
+        if ($transformer->renameTo !== null) {
+            $resultOfLevel[$transformer->renameTo] = $resultOfLevel[$levelKey];
+            unset($resultOfLevel[$levelKey]);
+        }
     }
 }

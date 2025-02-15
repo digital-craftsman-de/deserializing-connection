@@ -130,7 +130,7 @@ $this->deserializingConnection->getOne(
         'company' => DecoderType::JSON,
     ],
     resultTransformers: [
-        ResultTransformer::forObjectValue(
+        ResultTransformer::withTransformation(
             key: 'companyLink',
             denormalizeResultToClass: CompanyLink::class,
             transformer: fn(CompanyLink $companyLink) => $this->router->generate(
@@ -139,10 +139,19 @@ $this->deserializingConnection->getOne(
                     'companyId' => $companyLink->companyId,
                 ],
             ),
+            isTransformedResultNormalized: false,
         ),
     ],
 );
 ```
+
+The available variants of `ResultTransformer` are:
+
+- `withTransformation`
+- `withRenaming`
+- `withTransformationAndRenaming`
+
+The "renaming" variants are simply renaming the property into the supplied name.
 
 Additional documentation for the key (how it can be used in a multi level result and for arrays) can be found in the [`ResultTransformerKey.php class`](./src/Serializer/DTO/ResultTransformerKey.php). 
 

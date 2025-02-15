@@ -107,18 +107,23 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'companies' => DecoderType::JSON,
             ],
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'name',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
+                    isTransformedResultNormalized: false,
                 ),
-                DTO\ResultTransformer::forObjectValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'accessibleProjects',
                     denormalizeResultToClass: ProjectIdList::class,
                     transformer: static fn (ProjectIdList $ids): ProjectIdList => $ids->addId($staticAdditionalId),
+                    isTransformedResultNormalized: true,
                 ),
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'companies.*.name',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );
@@ -187,9 +192,11 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'companies' => DecoderType::JSON,
             ],
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'name',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );
@@ -263,9 +270,11 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'companies' => DecoderType::JSON,
             ],
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'name',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );
@@ -316,9 +325,11 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'companies' => DecoderType::JSON,
             ],
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'name',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );

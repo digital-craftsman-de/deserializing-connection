@@ -19,6 +19,7 @@ use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
 #[CoversClass(ResultTransformerRunner::class)]
+#[CoversClass(DTO\ResultTransformer::class)]
 #[CoversClass(Exception\ResultTransformerKeyNotFound::class)]
 final class ResultTransformerRunnerTest extends TestCase
 {
@@ -67,9 +68,11 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'name',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name) => strtoupper($name),
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );
@@ -94,9 +97,11 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'project',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name) => strtoupper($name),
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );
@@ -119,9 +124,11 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'project.name',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name) => strtoupper($name),
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );
@@ -151,9 +158,11 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'project.responsible.name',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name) => strtoupper($name),
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );
@@ -185,11 +194,13 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'projects.*.name',
+                    denormalizeResultToClass: null,
                     transformer: static function (string $name) {
                         return strtoupper($name);
                     },
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );
@@ -222,13 +233,15 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'projects.*.name',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name, array $resultOfLevel) => sprintf(
                         '%s - %s',
                         strtoupper($name),
                         $resultOfLevel['projectId'],
                     ),
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );
@@ -261,13 +274,15 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: [
-                DTO\ResultTransformer::forScalarValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'projects.*.name',
+                    denormalizeResultToClass: null,
                     transformer: static fn (string $name, array $resultOfLevel, array $result) => sprintf(
                         '%s - %s',
                         strtoupper($name),
                         $result['userId'],
                     ),
+                    isTransformedResultNormalized: false,
                 ),
             ],
         );
@@ -305,12 +320,11 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: [
-                DTO\ResultTransformer::forObjectValue(
+                DTO\ResultTransformer::withTransformation(
                     key: 'projects.*.accessToken',
                     denormalizeResultToClass: AccessToken::class,
-                    transformer: static fn (?AccessToken $accessToken) => $accessToken !== null
-                        ? $accessToken->increaseLevel()
-                        : null,
+                    transformer: static fn (?AccessToken $accessToken) => $accessToken?->increaseLevel(),
+                    isTransformedResultNormalized: true,
                 ),
             ],
         );
@@ -318,5 +332,88 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Assert
         self::assertSame(6, $result['projects'][0]['accessToken']['accessLevel']);
         self::assertNull($result['projects'][1]['accessToken']);
+    }
+
+    #[Test]
+    public function run_transformations_works_with_renaming(): void
+    {
+        // -- Arrange
+        $result = [
+            'userId' => '06e030f1-4db8-41bb-9e31-b7cb003bf5a7',
+            'name' => 'John Doe',
+            'projects' => [
+                [
+                    'projectId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+                    'name' => 'Project X',
+                    'accessToken' => [
+                        'token' => '35c9c331-f185-42c6-9952-90150fc56735',
+                        'accessLevel' => 5,
+                    ],
+                ],
+                [
+                    'projectId' => '5c0c0fc7-e0e7-4cfc-9715-21c96dfac6bb',
+                    'name' => 'Project Y',
+                    'accessToken' => null,
+                ],
+            ],
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: [
+                DTO\ResultTransformer::withRenaming(
+                    key: 'projects.*.accessToken',
+                    renameTo: 'token',
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertSame(5, $result['projects'][0]['token']['accessLevel']);
+        self::assertNull($result['projects'][1]['token']);
+    }
+
+    #[Test]
+    public function run_transformations_works_with_array_and_null_values_and_renaming(): void
+    {
+        // -- Arrange
+        $result = [
+            'userId' => '06e030f1-4db8-41bb-9e31-b7cb003bf5a7',
+            'name' => 'John Doe',
+            'projects' => [
+                [
+                    'projectId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+                    'name' => 'Project X',
+                    'accessToken' => [
+                        'token' => '35c9c331-f185-42c6-9952-90150fc56735',
+                        'accessLevel' => 5,
+                    ],
+                ],
+                [
+                    'projectId' => '5c0c0fc7-e0e7-4cfc-9715-21c96dfac6bb',
+                    'name' => 'Project Y',
+                    'accessToken' => null,
+                ],
+            ],
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: [
+                DTO\ResultTransformer::withTransformationAndRenaming(
+                    key: 'projects.*.accessToken',
+                    denormalizeResultToClass: AccessToken::class,
+                    transformer: static fn (?AccessToken $accessToken) => $accessToken?->increaseLevel(),
+                    isTransformedResultNormalized: true,
+                    renameTo: 'token',
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertSame(6, $result['projects'][0]['token']['accessLevel']);
+        self::assertNull($result['projects'][1]['token']);
     }
 }
