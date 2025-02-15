@@ -19,6 +19,7 @@ use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
 #[CoversClass(ResultTransformerRunner::class)]
+#[CoversClass(DTO\ResultTransformers::class)]
 #[CoversClass(DTO\ResultTransformer::class)]
 #[CoversClass(Exception\ResultTransformerKeyNotFound::class)]
 final class ResultTransformerRunnerTest extends TestCase
@@ -67,7 +68,7 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Act
         $this->resultTransformerRunner->runTransformations(
             result: $result,
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'name',
                     denormalizeResultToClass: null,
@@ -75,7 +76,7 @@ final class ResultTransformerRunnerTest extends TestCase
                     isTransformedResultNormalized: false,
                 ),
             ],
-        );
+            ));
 
         // -- Assert
         self::assertSame('JOHN DOE', $result['name']);
@@ -96,7 +97,7 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Act
         $this->resultTransformerRunner->runTransformations(
             result: $result,
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'project',
                     denormalizeResultToClass: null,
@@ -104,7 +105,7 @@ final class ResultTransformerRunnerTest extends TestCase
                     isTransformedResultNormalized: false,
                 ),
             ],
-        );
+            ));
     }
 
     #[Test]
@@ -123,7 +124,7 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Act
         $this->resultTransformerRunner->runTransformations(
             result: $result,
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'project.name',
                     denormalizeResultToClass: null,
@@ -131,7 +132,7 @@ final class ResultTransformerRunnerTest extends TestCase
                     isTransformedResultNormalized: false,
                 ),
             ],
-        );
+            ));
 
         // -- Assert
         self::assertSame('PROJECT X', $result['project']['name']);
@@ -157,7 +158,7 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Act
         $this->resultTransformerRunner->runTransformations(
             result: $result,
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'project.responsible.name',
                     denormalizeResultToClass: null,
@@ -165,7 +166,7 @@ final class ResultTransformerRunnerTest extends TestCase
                     isTransformedResultNormalized: false,
                 ),
             ],
-        );
+            ));
 
         // -- Assert
         self::assertSame('TONY STARK', $result['project']['responsible']['name']);
@@ -193,7 +194,7 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Act
         $this->resultTransformerRunner->runTransformations(
             result: $result,
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'projects.*.name',
                     denormalizeResultToClass: null,
@@ -202,7 +203,7 @@ final class ResultTransformerRunnerTest extends TestCase
                     },
                     isTransformedResultNormalized: false,
                 ),
-            ],
+            ]),
         );
 
         // -- Assert
@@ -232,7 +233,7 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Act
         $this->resultTransformerRunner->runTransformations(
             result: $result,
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'projects.*.name',
                     denormalizeResultToClass: null,
@@ -243,7 +244,7 @@ final class ResultTransformerRunnerTest extends TestCase
                     ),
                     isTransformedResultNormalized: false,
                 ),
-            ],
+            ]),
         );
 
         // -- Assert
@@ -273,7 +274,7 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Act
         $this->resultTransformerRunner->runTransformations(
             result: $result,
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'projects.*.name',
                     denormalizeResultToClass: null,
@@ -284,7 +285,7 @@ final class ResultTransformerRunnerTest extends TestCase
                     ),
                     isTransformedResultNormalized: false,
                 ),
-            ],
+            ]),
         );
 
         // -- Assert
@@ -319,7 +320,7 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Act
         $this->resultTransformerRunner->runTransformations(
             result: $result,
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'projects.*.accessToken',
                     denormalizeResultToClass: AccessToken::class,
@@ -327,7 +328,7 @@ final class ResultTransformerRunnerTest extends TestCase
                     isTransformedResultNormalized: true,
                 ),
             ],
-        );
+            ));
 
         // -- Assert
         self::assertSame(6, $result['projects'][0]['accessToken']['accessLevel']);
@@ -361,15 +362,15 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Act
         $this->resultTransformerRunner->runTransformations(
             result: $result,
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withRenaming(
                     key: 'projects.*.accessToken',
                     renameTo: 'token',
                 ),
-            ],
+            ]),
         );
 
-        // -- Assert
+        // -- Asser)t
         self::assertSame(5, $result['projects'][0]['token']['accessLevel']);
         self::assertNull($result['projects'][1]['token']);
     }
@@ -401,7 +402,7 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Act
         $this->resultTransformerRunner->runTransformations(
             result: $result,
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformationAndRenaming(
                     key: 'projects.*.accessToken',
                     denormalizeResultToClass: AccessToken::class,
@@ -409,7 +410,7 @@ final class ResultTransformerRunnerTest extends TestCase
                     isTransformedResultNormalized: true,
                     renameTo: 'token',
                 ),
-            ],
+            ]),
         );
 
         // -- Assert

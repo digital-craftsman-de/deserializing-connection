@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
-use DigitalCraftsman\DeserializingConnection\Serializer\DTO\DecoderType;
 use DigitalCraftsman\DeserializingConnection\Test\ConnectionTestCase;
 use DigitalCraftsman\DeserializingConnection\Test\DTO\Company;
 use DigitalCraftsman\DeserializingConnection\Test\DTO\User;
@@ -26,8 +25,10 @@ use Symfony\Component\Serializer\Serializer;
 
 #[CoversClass(DeserializingConnection::class)]
 #[CoversClass(TypedDenormalizer::class)]
+#[CoversClass(DTO\ResultTransformers::class)]
 #[CoversClass(DTO\ResultTransformer::class)]
 #[CoversClass(Exception\ElementNotFound::class)]
+#[CoversClass(DTO\Exception\ConflictBetweenKeysAndRenameToConfiguration::class)]
 final class DeserializingConnectionTest extends ConnectionTestCase
 {
     private DeserializingConnection $deserializingConnection;
@@ -103,10 +104,10 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'userId' => $userIdString,
             ],
             decoderTypes: [
-                'accessibleProjects' => DecoderType::JSON,
-                'companies' => DecoderType::JSON,
+                'accessibleProjects' => DTO\DecoderType::JSON,
+                'companies' => DTO\DecoderType::JSON,
             ],
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'name',
                     denormalizeResultToClass: null,
@@ -125,7 +126,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                     transformer: static fn (string $name): string => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
-            ],
+            ]),
         );
 
         // -- Assert
@@ -150,12 +151,45 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 SQL,
             class: User::class,
             decoderTypes: [
-                'accessibleProjects' => DecoderType::JSON,
+                'accessibleProjects' => DTO\DecoderType::JSON,
             ],
         );
 
         // -- Assert
         self::assertEquals($expectedResult, $user);
+    }
+
+    #[Test]
+    public function find_one_fails_with_invalid_result_transformer_configuration(): void
+    {
+        // -- Assert
+        $this->expectException(DTO\Exception\ConflictBetweenKeysAndRenameToConfiguration::class);
+
+        // -- Act
+        $this->deserializingConnection->findOne(
+            sql: <<<'SQL'
+                WITH empty_table AS (
+                    SELECT 1
+                    WHERE false
+                )
+                SELECT *
+                FROM empty_table
+                SQL,
+            class: User::class,
+            decoderTypes: [
+                'accessibleProjects' => DTO\DecoderType::JSON,
+            ],
+            resultTransformers: new DTO\ResultTransformers([
+                DTO\ResultTransformer::withRenaming(
+                    key: 'name',
+                    renameTo: 'firstName',
+                ),
+                DTO\ResultTransformer::withRenaming(
+                    key: 'firstName',
+                    renameTo: 'lastName',
+                ),
+            ]),
+        );
     }
 
     #[Test]
@@ -188,17 +222,64 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'userId' => $userIdString,
             ],
             decoderTypes: [
-                'accessibleProjects' => DecoderType::JSON,
-                'companies' => DecoderType::JSON,
+                'accessibleProjects' => DTO\DecoderType::JSON,
+                'companies' => DTO\DecoderType::JSON,
             ],
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
+            ]),
+        );
+
+        // -- Assert
+        self::assertEquals($expectedResult, $user);
+    }
+
+    #[Test]
+    public function get_one_fails_with_invalid_configuration(): void
+    {
+        // -- Arrange
+        $userIdString = '417df760-0d16-408f-8201-ec7760dee9fb';
+        $expectedResult = new User(
+            userId: UserId::fromString($userIdString),
+            name: 'JOHN DOE',
+            accessibleProjects: new ProjectIdList([
+                ProjectId::fromString('05f620c2-ea64-4012-816f-884310f69dd0'),
+                ProjectId::fromString('91f47435-208d-4344-990b-ae17bd4b13fa'),
+            ]),
+            companies: [],
+        );
+
+        // -- Act
+        $user = $this->deserializingConnection->getOne(
+            sql: <<<'SQL'
+                SELECT
+                    '417df760-0d16-408f-8201-ec7760dee9fb' AS "userId",
+                    'John Doe' AS name,
+                    '["05f620c2-ea64-4012-816f-884310f69dd0", "91f47435-208d-4344-990b-ae17bd4b13fa"]' AS "accessibleProjects",
+                    '[]' AS "companies"
+                WHERE '417df760-0d16-408f-8201-ec7760dee9fb' = :userId
+                SQL,
+            class: User::class,
+            parameters: [
+                'userId' => $userIdString,
             ],
+            decoderTypes: [
+                'accessibleProjects' => DTO\DecoderType::JSON,
+                'companies' => DTO\DecoderType::JSON,
+            ],
+            resultTransformers: new DTO\ResultTransformers([
+                DTO\ResultTransformer::withTransformation(
+                    key: 'name',
+                    denormalizeResultToClass: null,
+                    transformer: static fn (string $name): string => strtoupper($name),
+                    isTransformedResultNormalized: false,
+                ),
+            ]),
         );
 
         // -- Assert
@@ -223,7 +304,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 SQL,
             class: User::class,
             decoderTypes: [
-                'accessibleProjects' => DecoderType::JSON,
+                'accessibleProjects' => DTO\DecoderType::JSON,
             ],
         );
     }
@@ -266,17 +347,17 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 SQL,
             class: User::class,
             decoderTypes: [
-                'accessibleProjects' => DecoderType::JSON,
-                'companies' => DecoderType::JSON,
+                'accessibleProjects' => DTO\DecoderType::JSON,
+                'companies' => DTO\DecoderType::JSON,
             ],
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
-            ],
+            ]),
         );
 
         // -- Assert
@@ -321,17 +402,17 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 SQL,
             class: User::class,
             decoderTypes: [
-                'accessibleProjects' => DecoderType::JSON,
-                'companies' => DecoderType::JSON,
+                'accessibleProjects' => DTO\DecoderType::JSON,
+                'companies' => DTO\DecoderType::JSON,
             ],
-            resultTransformers: [
+            resultTransformers: new DTO\ResultTransformers([
                 DTO\ResultTransformer::withTransformation(
                     key: 'name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
-            ],
+            ]),
         );
 
         // -- Assert

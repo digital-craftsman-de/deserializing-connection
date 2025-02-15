@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
-use DigitalCraftsman\DeserializingConnection\Serializer\DTO\ResultTransformerKey;
-
 final readonly class ResultTransformerRunner
 {
     public function __construct(
@@ -13,12 +11,9 @@ final readonly class ResultTransformerRunner
     ) {
     }
 
-    /**
-     * @param array<int, DTO\ResultTransformer> $resultTransformers
-     */
     public function runTransformations(
         array &$result,
-        array $resultTransformers,
+        DTO\ResultTransformers $resultTransformers,
     ): void {
         foreach ($resultTransformers as $resultTransformation) {
             $levels = explode('.', $resultTransformation->key->value);
@@ -52,7 +47,7 @@ final readonly class ResultTransformerRunner
             return;
         }
 
-        if ($levelKey === ResultTransformerKey::ARRAY_KEY_IDENTIFIER) {
+        if ($levelKey === DTO\ResultTransformerKey::ARRAY_KEY_IDENTIFIER) {
             foreach ($resultOfLevel as &$resultOfLevelItem) {
                 $this->runRecursive(
                     transformer: $transformer,
