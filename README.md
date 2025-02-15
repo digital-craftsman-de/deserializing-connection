@@ -129,7 +129,7 @@ $this->deserializingConnection->getOne(
     decoderTypes: [
         'company' => DecoderType::JSON,
     ],
-    resultTransformers: [
+    resultTransformers: new ResultTransfomers([
         ResultTransformer::withTransformation(
             key: 'companyLink',
             denormalizeResultToClass: CompanyLink::class,
@@ -141,7 +141,7 @@ $this->deserializingConnection->getOne(
             ),
             isTransformedResultNormalized: false,
         ),
-    ],
+    ]),
 );
 ```
 
