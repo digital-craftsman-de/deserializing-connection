@@ -93,6 +93,59 @@ When you want to get a scalar value or do more complex stuff, you can use the un
 
 `fetchInt` and `fetchBool` will throw custom exceptions when there are no values or they are not of the expected type.
 
+### Result transformers
+
+There are cases where you're not able to do everything in the SQL query. For example when you want to calculate a value based on data of the environment or information that is only available on runtime. In those cases, you can use result transformers to run callbacks before the data is deserialized into the DTO.
+
+This can look like this for the following DTO:
+
+```php
+final readonly class User
+{
+    public function __construct(
+        public UserId $userId,
+        public string $name,
+        public string $companyLink,
+    ) {
+    }
+}
+```
+
+```php
+$this->deserializingConnection->getOne(
+    sql: <<<'SQL'
+        SELECT
+            user_id AS "userId",
+            name,
+            companyLink
+        FROM
+            `user`
+        WHERE user_id = :userId
+        SQL,
+    class: ReadModel\User::class,
+    parameters: [
+        'userId' => $userId,
+    ],
+    decoderTypes: [
+        'company' => DecoderType::JSON,
+    ],
+    resultTransformers: [
+        ResultTransformer::forObjectValue(
+            key: 'companyLink',
+            denormalizeResultToClass: CompanyLink::class,
+            transformer: fn(CompanyLink $companyLink) => $this->router->generate(
+                'company_show',
+                [
+                    'companyId' => $companyLink->companyId,
+                ],
+            ),
+        ),
+    ],
+);
+```
+
+Additional documentation for the key (how it can be used in a multi level result and for arrays) can be found in the [`ResultTransformerKey.php class`](./src/Serializer/DTO/ResultTransformerKey.php). 
+
 ### Normalizers
 
 For easier normalization, use the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package which is required by this package.
