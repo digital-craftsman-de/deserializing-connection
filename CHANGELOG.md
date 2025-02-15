@@ -2,7 +2,7 @@
 
 ## 0.5.0
 
-- Added result transformer concept to transform the database result after decoding and before denormalization.
+- Added result transformer concept to transform and / or rename properties in the database result after decoding and before denormalization.
 
 ## 0.4.0
 
