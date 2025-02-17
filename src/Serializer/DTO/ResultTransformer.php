@@ -29,7 +29,7 @@ final readonly class ResultTransformer
      * @param class-string|null                                                    $denormalizeResultToClass
      * @param \Closure(mixed $payload, array $resultOfLevel, array $result): mixed $transformer
      */
-    public static function withTransformation(
+    public static function toTransform(
         string $key,
         ?string $denormalizeResultToClass,
         \Closure $transformer,
@@ -44,7 +44,7 @@ final readonly class ResultTransformer
         );
     }
 
-    public static function withRenaming(
+    public static function toRename(
         string $key,
         string $renameTo,
     ): self {
@@ -61,7 +61,7 @@ final readonly class ResultTransformer
      * @param class-string|null                                                    $denormalizeResultToClass
      * @param \Closure(mixed $payload, array $resultOfLevel, array $result): mixed $transformer
      */
-    public static function withTransformationAndRenaming(
+    public static function toTransformAndRename(
         string $key,
         ?string $denormalizeResultToClass,
         \Closure $transformer,

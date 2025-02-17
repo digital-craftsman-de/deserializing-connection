@@ -107,26 +107,26 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'accessibleProjects' => DTO\DecoderType::JSON,
                 'companies' => DTO\DecoderType::JSON,
             ],
-            resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+            resultTransformers: [
+                DTO\ResultTransformer::toTransform(
                     key: 'name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
-                DTO\ResultTransformer::withTransformation(
+                DTO\ResultTransformer::toTransform(
                     key: 'accessibleProjects',
                     denormalizeResultToClass: ProjectIdList::class,
                     transformer: static fn (ProjectIdList $ids): ProjectIdList => $ids->addId($staticAdditionalId),
                     isTransformedResultNormalized: true,
                 ),
-                DTO\ResultTransformer::withTransformation(
+                DTO\ResultTransformer::toTransform(
                     key: 'companies.*.name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
-            ]),
+            ],
         );
 
         // -- Assert
@@ -179,16 +179,16 @@ final class DeserializingConnectionTest extends ConnectionTestCase
             decoderTypes: [
                 'accessibleProjects' => DTO\DecoderType::JSON,
             ],
-            resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withRenaming(
+            resultTransformers: [
+                DTO\ResultTransformer::toRename(
                     key: 'name',
                     renameTo: 'firstName',
                 ),
-                DTO\ResultTransformer::withRenaming(
+                DTO\ResultTransformer::toRename(
                     key: 'firstName',
                     renameTo: 'lastName',
                 ),
-            ]),
+            ],
         );
     }
 
@@ -225,14 +225,14 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'accessibleProjects' => DTO\DecoderType::JSON,
                 'companies' => DTO\DecoderType::JSON,
             ],
-            resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+            resultTransformers: [
+                DTO\ResultTransformer::toTransform(
                     key: 'name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
-            ]),
+            ],
         );
 
         // -- Assert
@@ -272,14 +272,14 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'accessibleProjects' => DTO\DecoderType::JSON,
                 'companies' => DTO\DecoderType::JSON,
             ],
-            resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+            resultTransformers: [
+                DTO\ResultTransformer::toTransform(
                     key: 'name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
-            ]),
+            ],
         );
 
         // -- Assert
@@ -350,14 +350,14 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'accessibleProjects' => DTO\DecoderType::JSON,
                 'companies' => DTO\DecoderType::JSON,
             ],
-            resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+            resultTransformers: [
+                DTO\ResultTransformer::toTransform(
                     key: 'name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
-            ]),
+            ],
         );
 
         // -- Assert
@@ -405,14 +405,14 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 'accessibleProjects' => DTO\DecoderType::JSON,
                 'companies' => DTO\DecoderType::JSON,
             ],
-            resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+            resultTransformers: [
+                DTO\ResultTransformer::toTransform(
                     key: 'name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name): string => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
-            ]),
+            ],
         );
 
         // -- Assert

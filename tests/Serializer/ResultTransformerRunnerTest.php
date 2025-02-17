@@ -69,7 +69,7 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+                DTO\ResultTransformer::toTransform(
                     key: 'name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name) => strtoupper($name),
@@ -98,7 +98,7 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+                DTO\ResultTransformer::toTransform(
                     key: 'project',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name) => strtoupper($name),
@@ -125,7 +125,7 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+                DTO\ResultTransformer::toTransform(
                     key: 'project.name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name) => strtoupper($name),
@@ -159,7 +159,7 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+                DTO\ResultTransformer::toTransform(
                     key: 'project.responsible.name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name) => strtoupper($name),
@@ -195,7 +195,7 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+                DTO\ResultTransformer::toTransform(
                     key: 'projects.*.name',
                     denormalizeResultToClass: null,
                     transformer: static function (string $name) {
@@ -234,7 +234,7 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+                DTO\ResultTransformer::toTransform(
                     key: 'projects.*.name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name, array $resultOfLevel) => sprintf(
@@ -275,7 +275,7 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+                DTO\ResultTransformer::toTransform(
                     key: 'projects.*.name',
                     denormalizeResultToClass: null,
                     transformer: static fn (string $name, array $resultOfLevel, array $result) => sprintf(
@@ -321,7 +321,7 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformation(
+                DTO\ResultTransformer::toTransform(
                     key: 'projects.*.accessToken',
                     denormalizeResultToClass: AccessToken::class,
                     transformer: static fn (?AccessToken $accessToken) => $accessToken?->increaseLevel(),
@@ -363,7 +363,7 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withRenaming(
+                DTO\ResultTransformer::toRename(
                     key: 'projects.*.accessToken',
                     renameTo: 'token',
                 ),
@@ -403,7 +403,7 @@ final class ResultTransformerRunnerTest extends TestCase
         $this->resultTransformerRunner->runTransformations(
             result: $result,
             resultTransformers: new DTO\ResultTransformers([
-                DTO\ResultTransformer::withTransformationAndRenaming(
+                DTO\ResultTransformer::toTransformAndRename(
                     key: 'projects.*.accessToken',
                     denormalizeResultToClass: AccessToken::class,
                     transformer: static fn (?AccessToken $accessToken) => $accessToken?->increaseLevel(),
