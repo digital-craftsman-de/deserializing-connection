@@ -23,6 +23,11 @@
       "ignore": [
         "DigitalCraftsman\\DeserializingConnection\\**\\Exception\\**::__construct"
       ]
+    },
+    "FalseValue": {
+      "ignore": [
+        "DigitalCraftsman\\DeserializingConnection\\Serializer\\DTO\\ResultTransformer::toRename"
+      ]
     }
   },
   "minMsi": 100,

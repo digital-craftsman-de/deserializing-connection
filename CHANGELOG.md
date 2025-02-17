@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0
+
+- Added result transformer concept to transform and / or rename properties in the database result after decoding and before denormalization.
+
 ## 0.4.0
 
 - Added full support for PHP 8.4 including dependencies.

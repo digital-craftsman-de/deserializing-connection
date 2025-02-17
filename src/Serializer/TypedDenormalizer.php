@@ -5,12 +5,22 @@ declare(strict_types=1);
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 final readonly class TypedDenormalizer
 {
     public function __construct(
-        private DenormalizerInterface $denormalizer,
+        private NormalizerInterface & DenormalizerInterface $serializer,
     ) {
+    }
+
+    public function normalize(
+        object $object,
+    ): array {
+        /** @var array */
+        return $this->serializer->normalize(
+            $object,
+        );
     }
 
     /**
@@ -25,7 +35,7 @@ final readonly class TypedDenormalizer
         string $class,
     ): object {
         /** @var T */
-        return $this->denormalizer->denormalize(
+        return $this->serializer->denormalize(
             data: $data,
             type: $class,
         );
@@ -43,7 +53,7 @@ final readonly class TypedDenormalizer
         string $class,
     ): array {
         /** @var list<T> */
-        return $this->denormalizer->denormalize(
+        return $this->serializer->denormalize(
             data: $data,
             type: self::arrayOfClass($class),
         );

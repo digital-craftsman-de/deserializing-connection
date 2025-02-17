@@ -58,6 +58,7 @@ final class TypedDenormalizerTest extends TestCase
             'userId' => '1a493034-c5e0-4414-a9b7-ca414b884719',
             'name' => 'John Doe',
             'accessibleProjects' => [],
+            'companies' => [],
         ];
 
         // -- Act
@@ -78,11 +79,13 @@ final class TypedDenormalizerTest extends TestCase
                 'userId' => '1a493034-c5e0-4414-a9b7-ca414b884719',
                 'name' => 'John Doe',
                 'accessibleProjects' => [],
+                'companies' => [],
             ],
             [
                 'userId' => '42a4d8b0-73ff-42da-88cc-8dd96fa2f170',
                 'name' => 'Jane Doe',
                 'accessibleProjects' => [],
+                'companies' => [],
             ],
         ];
 

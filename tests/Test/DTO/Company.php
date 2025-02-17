@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Test\DTO;
 
-use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectId;
+use DigitalCraftsman\DeserializingConnection\Test\ValueObject\CompanyId;
 use DigitalCraftsman\SelfAwareNormalizers\Serializer\ArrayNormalizable;
 
-final readonly class Project implements ArrayNormalizable
+final readonly class Company implements ArrayNormalizable
 {
     public function __construct(
-        public ProjectId $projectId,
+        public CompanyId $companyId,
         public string $name,
     ) {
     }
@@ -19,28 +19,28 @@ final readonly class Project implements ArrayNormalizable
 
     /**
      * @param array{
-     *   projectId: string,
-     *    name: string,
+     *   companyId: string,
+     *   name: string,
      * } $data
      */
     public static function denormalize(array $data): self
     {
         return new self(
-            projectId: ProjectId::denormalize($data['projectId']),
+            companyId: CompanyId::denormalize($data['companyId']),
             name: $data['name'],
         );
     }
 
     /**
      * @return array{
-     *   projectId: string,
+     *   companyId: string,
      *   name: string,
      * }
      */
     public function normalize(): array
     {
         return [
-            'projectId' => $this->projectId->normalize(),
+            'companyId' => $this->companyId->normalize(),
             'name' => $this->name,
         ];
     }

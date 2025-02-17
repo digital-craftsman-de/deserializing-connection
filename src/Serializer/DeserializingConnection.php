@@ -11,6 +11,7 @@ final readonly class DeserializingConnection
     public function __construct(
         private DecodingConnection $decodingConnection,
         private TypedDenormalizer $typedDenormalizer,
+        private ResultTransformerRunner $resultTransformerRunner,
     ) {
     }
 
@@ -22,6 +23,7 @@ final readonly class DeserializingConnection
      * @param list<mixed>|array<string, mixed>                                     $parameters
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
      * @param array<string, DTO\DecoderType>                                       $decoderTypes
+     * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
      *
      * @return T|null
      */
@@ -31,7 +33,10 @@ final readonly class DeserializingConnection
         array $parameters = [],
         array $parameterTypes = [],
         array $decoderTypes = [],
+        array $resultTransformers = [],
     ): ?object {
+        $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
+
         $result = $this->decodingConnection->fetchAssociative(
             $sql,
             $parameters,
@@ -43,6 +48,11 @@ final readonly class DeserializingConnection
             return null;
         }
 
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: $resultTransformerDTOs,
+        );
+
         return $this->typedDenormalizer->denormalize($result, $class);
     }
 
@@ -54,6 +64,7 @@ final readonly class DeserializingConnection
      * @param list<mixed>|array<string, mixed>                                     $parameters
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
      * @param array<string, DTO\DecoderType>                                       $decoderTypes
+     * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
      *
      * @return T
      */
@@ -63,7 +74,10 @@ final readonly class DeserializingConnection
         array $parameters = [],
         array $parameterTypes = [],
         array $decoderTypes = [],
+        array $resultTransformers = [],
     ): ?object {
+        $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
+
         $result = $this->decodingConnection->fetchAssociative(
             $sql,
             $parameters,
@@ -75,6 +89,11 @@ final readonly class DeserializingConnection
             throw new Exception\ElementNotFound();
         }
 
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: $resultTransformerDTOs,
+        );
+
         return $this->typedDenormalizer->denormalize($result, $class);
     }
 
@@ -86,6 +105,7 @@ final readonly class DeserializingConnection
      * @param list<mixed>|array<string, mixed>                                     $parameters
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
      * @param array<string, DTO\DecoderType>                                       $decoderTypes
+     * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
      *
      * @return list<T>
      */
@@ -95,7 +115,10 @@ final readonly class DeserializingConnection
         array $parameters = [],
         array $parameterTypes = [],
         array $decoderTypes = [],
+        array $resultTransformers = [],
     ): array {
+        $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
+
         /** @var list<array> $result */
         $result = $this->decodingConnection->fetchAllAssociative(
             $sql,
@@ -103,6 +126,13 @@ final readonly class DeserializingConnection
             $parameterTypes,
             $decoderTypes,
         );
+
+        foreach ($result as &$resultItem) {
+            $this->resultTransformerRunner->runTransformations(
+                result: $resultItem,
+                resultTransformers: $resultTransformerDTOs,
+            );
+        }
 
         return $this->typedDenormalizer->denormalizeArray($result, $class);
     }
@@ -115,6 +145,7 @@ final readonly class DeserializingConnection
      * @param list<mixed>|array<string, mixed>                                     $parameters
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
      * @param array<string, DTO\DecoderType>                                       $decoderTypes
+     * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
      *
      * @return \Generator<int, T>
      */
@@ -124,7 +155,10 @@ final readonly class DeserializingConnection
         array $parameters = [],
         array $parameterTypes = [],
         array $decoderTypes = [],
+        array $resultTransformers = [],
     ): \Generator {
+        $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
+
         /** @var list<array> $result */
         $result = $this->decodingConnection->fetchAllAssociative(
             $sql,
@@ -132,6 +166,13 @@ final readonly class DeserializingConnection
             $parameterTypes,
             $decoderTypes,
         );
+
+        foreach ($result as &$resultItem) {
+            $this->resultTransformerRunner->runTransformations(
+                result: $resultItem,
+                resultTransformers: $resultTransformerDTOs,
+            );
+        }
 
         foreach ($result as $item) {
             /** @var T */
