@@ -16,8 +16,7 @@ final readonly class TypedDenormalizer
 
     public function normalize(
         object $object,
-    ): array {
-        /** @var array */
+    ): array | string | int | float | bool | \ArrayObject | null {
         return $this->serializer->normalize(
             $object,
         );
@@ -31,7 +30,7 @@ final readonly class TypedDenormalizer
      * @return T
      */
     public function denormalize(
-        array $data,
+        mixed $data,
         string $class,
     ): object {
         /** @var T */
