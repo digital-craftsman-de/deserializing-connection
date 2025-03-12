@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- Extended the return type and parameter type in `TypedDenormalizer` as it was to narrow to allow all relevant cases.
+
 ## 0.5.0
 
 - Added result transformer concept to transform and / or rename properties in the database result after decoding and before denormalization.
