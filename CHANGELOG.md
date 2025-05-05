@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.2
+
+- Updated `digital-craftsman/self-aware-normalizers` to use the first stable version.
+
 ## 0.5.1
 
 - Extended the return type and parameter type in `TypedDenormalizer` as it was to narrow to allow all relevant cases.
