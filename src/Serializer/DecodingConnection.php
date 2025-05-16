@@ -17,6 +17,32 @@ final readonly class DecodingConnection
     /**
      * @param list<mixed>|array<string, mixed>                                     $parameters
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     *
+     * @return array<string, mixed>|null
+     */
+    public function fetchOne(
+        string $sql,
+        array $parameters = [],
+        array $parameterTypes = [],
+        ?DTO\DecoderType $decoderType = null,
+    ): mixed {
+        /** @var mixed|false $result */
+        $result = $this->connection->fetchOne($sql, $parameters, $parameterTypes);
+
+        if ($result === false) {
+            return null;
+        }
+
+        if ($decoderType !== null) {
+            self::decodeValue($result, $decoderType);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param list<mixed>|array<string, mixed>                                     $parameters
+     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
      * @param array<string, DTO\DecoderType>                                       $decoderTypes
      *
      * @return array<string, mixed>|null
@@ -54,6 +80,25 @@ final readonly class DecodingConnection
         $result = $this->connection->fetchAllAssociative($sql, $parameters, $parameterTypes);
 
         self::decodeResults($result, $decoderTypes);
+
+        return $result;
+    }
+
+    /**
+     * @param list<mixed>|array<string, mixed>                                     $parameters
+     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     * @param array<string, DTO\DecoderType>                                       $decoderTypes
+     */
+    public function fetchFirstColumn(
+        string $sql,
+        array $parameters = [],
+        array $parameterTypes = [],
+        ?DTO\DecoderType $decoderType = null,
+    ): array {
+        /** @var array<int, array<string, mixed>> $result */
+        $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+
+        // TODO: Decode results
 
         return $result;
     }
@@ -149,38 +194,45 @@ final readonly class DecodingConnection
             }
 
             $decoderType = $decoderTypes[$itemKey];
-            $item[$itemKey] = match ($decoderType) {
-                DTO\DecoderType::INT => (int) $itemValue,
-                DTO\DecoderType::NULLABLE_INT => $itemValue === null
-                    ? null
-                    : (int) $itemValue,
-                DTO\DecoderType::FLOAT => (float) $itemValue,
-                DTO\DecoderType::NULLABLE_FLOAT => $itemValue === null
-                    ? null
-                    : (float) $itemValue,
-                DTO\DecoderType::JSON => json_decode(
-                    $itemValue,
+            $item[$itemKey] = self::decodeValue($itemValue, $decoderType);
+        }
+    }
+
+    public static function decodeValue(
+        mixed $value,
+        DTO\DecoderType $decoderType,
+    ): mixed {
+        return match ($decoderType) {
+            DTO\DecoderType::INT => (int) $value,
+            DTO\DecoderType::NULLABLE_INT => $value === null
+                ? null
+                : (int) $value,
+            DTO\DecoderType::FLOAT => (float) $value,
+            DTO\DecoderType::NULLABLE_FLOAT => $value === null
+                ? null
+                : (float) $value,
+            DTO\DecoderType::JSON => json_decode(
+                $value,
+                true,
+                512,
+                \JSON_THROW_ON_ERROR,
+            ),
+            DTO\DecoderType::NULLABLE_JSON => $value === null
+                ? null
+                : json_decode(
+                    $value,
                     true,
                     512,
                     \JSON_THROW_ON_ERROR,
                 ),
-                DTO\DecoderType::NULLABLE_JSON => $itemValue === null
-                    ? null
-                    : json_decode(
-                        $itemValue,
-                        true,
-                        512,
-                        \JSON_THROW_ON_ERROR,
-                    ),
-                DTO\DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL => $itemValue === null
-                    ? []
-                    : json_decode(
-                        $itemValue,
-                        true,
-                        512,
-                        \JSON_THROW_ON_ERROR,
-                    ),
-            };
-        }
+            DTO\DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL => $value === null
+                ? []
+                : json_decode(
+                    $value,
+                    true,
+                    512,
+                    \JSON_THROW_ON_ERROR,
+                ),
+        };
     }
 }

@@ -6,6 +6,7 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
 use DigitalCraftsman\DeserializingConnection\Test\DTO\User;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectIdList;
+use DigitalCraftsman\DeserializingConnection\Test\ValueObject\UserId;
 use DigitalCraftsman\SelfAwareNormalizers\Serializer\ArrayNormalizableNormalizer;
 use DigitalCraftsman\SelfAwareNormalizers\Serializer\StringNormalizableNormalizer;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -68,6 +69,35 @@ final class TypedDenormalizerTest extends TestCase
         self::assertEquals('1a493034-c5e0-4414-a9b7-ca414b884719', $user->userId);
         self::assertSame('John Doe', $user->name);
         self::assertEquals(ProjectIdList::emptyList(), $user->accessibleProjects);
+    }
+
+    #[Test]
+    public function denormalize_object_from_string_works(): void
+    {
+        // -- Arrange
+        $data = '1a493034-c5e0-4414-a9b7-ca414b884719';
+
+        // -- Act
+        $userId = $this->typedDenormalizer->denormalize($data, UserId::class);
+
+        // -- Assert
+        self::assertEquals('1a493034-c5e0-4414-a9b7-ca414b884719', $userId);
+    }
+
+    #[Test]
+    public function denormalize_object_from_array_works(): void
+    {
+        // -- Arrange
+        $data = [
+            '1a493034-c5e0-4414-a9b7-ca414b884719',
+            '42a4d8b0-73ff-42da-88cc-8dd96fa2f170',
+        ];
+
+        // -- Act
+        $projectIdList = $this->typedDenormalizer->denormalize($data, ProjectIdList::class);
+
+        // -- Assert
+        self::assertEquals(ProjectIdList::denormalize($data), $projectIdList);
     }
 
     #[Test]
