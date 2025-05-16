@@ -104,6 +104,100 @@ final readonly class DeserializingConnection
      * @param class-string<T>                                                      $class
      * @param list<mixed>|array<string, mixed>                                     $parameters
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     *
+     * @return T|null
+     */
+    public function findOneFromSingleValue(
+        string $sql,
+        string $class,
+        array $parameters = [],
+        array $parameterTypes = [],
+        ?DTO\DecoderType $decoderType = null,
+        ?DTO\ResultTransformer $resultTransformer = null,
+    ): ?object {
+        if ($resultTransformer !== null
+            && $resultTransformer->renameTo !== null
+        ) {
+            throw new Exception\SingleValueTransformationMustNotContainRenaming();
+        }
+
+        $result = $this->decodingConnection->fetchOne(
+            $sql,
+            $parameters,
+            $parameterTypes,
+            $decoderType,
+        );
+
+        if ($result === null) {
+            return null;
+        }
+
+        if ($resultTransformer !== null) {
+            $this->resultTransformerRunner->transformItem(
+                transformer: $resultTransformer,
+                item: $result,
+                result: $result,
+                resultOfLevel: $result,
+            );
+        }
+
+        return $this->typedDenormalizer->denormalize($result, $class);
+    }
+
+    /**
+     * @template T of object
+     *
+     * @param non-empty-string                                                     $sql
+     * @param class-string<T>                                                      $class
+     * @param list<mixed>|array<string, mixed>                                     $parameters
+     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     *
+     * @return T
+     */
+    public function getOneFromSingleValue(
+        string $sql,
+        string $class,
+        array $parameters = [],
+        array $parameterTypes = [],
+        ?DTO\DecoderType $decoderType = null,
+        ?DTO\ResultTransformer $resultTransformer = null,
+    ): object {
+        if ($resultTransformer !== null
+            && $resultTransformer->renameTo !== null
+        ) {
+            throw new Exception\SingleValueTransformationMustNotContainRenaming();
+        }
+
+        $result = $this->decodingConnection->fetchOne(
+            $sql,
+            $parameters,
+            $parameterTypes,
+            $decoderType,
+        );
+
+        if ($result === null) {
+            throw new Exception\ElementNotFound();
+        }
+
+        if ($resultTransformer !== null) {
+            $this->resultTransformerRunner->transformItem(
+                transformer: $resultTransformer,
+                item: $result,
+                result: $result,
+                resultOfLevel: $result,
+            );
+        }
+
+        return $this->typedDenormalizer->denormalize($result, $class);
+    }
+
+    /**
+     * @template T of object
+     *
+     * @param non-empty-string                                                     $sql
+     * @param class-string<T>                                                      $class
+     * @param list<mixed>|array<string, mixed>                                     $parameters
+     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
      * @param array<string, DTO\DecoderType>                                       $decoderTypes
      * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
      *
