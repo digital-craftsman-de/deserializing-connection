@@ -18,7 +18,7 @@ Install package through composer:
 composer require digital-craftsman/deserializing-connection
 ```
 
-> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.5.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
+> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.6.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
 
 ## Usage
 
@@ -67,6 +67,8 @@ These are the offered methods:
 
 - `getOne` to return one object or an exception when no result is found.
 - `findOne` like `getOne`, but returns `null` when no result is found.
+- `getOneFromSingleValue` to return one object from a single value or an exception when no result is found.
+- `findOneFromSingleValue` like `getOneFromSingleValue`, but returns `null` when no result is found.
 - `findArray` to return an array of objects.
 - `findGenerator` to return a generator that yields the objects.
 
@@ -74,6 +76,8 @@ These are the offered methods:
 
 Part of the magic is the conversion from database types to PHP types. For example, when your SQL returns a JSON string, you usually need to convert it into an associative array prior to serialization. Here you just need to supply `decoderTypes` with the column name and the type of decoder you want to use. There are utilities that can handle nullable values or create a empty array when a JSON returns null (relevant for `jsonb_agg` calls). These are the available decoder types which are all pretty self-explanatory:
 
+- `BOOL`
+- `NULLABLE_BOOL`
 - `INT`
 - `NULLABLE_INT`
 - `FLOAT`
@@ -86,8 +90,10 @@ Part of the magic is the conversion from database types to PHP types. For exampl
 
 When you want to get a scalar value or do more complex stuff, you can use the underlying `DecodingConnection`. It offers the following methods:
 
+- `fetchOne`
 - `fetchAssociative`
 - `fetchAllAssociative`
+- `fetchFirstColumn`
 - `fetchInt`
 - `fetchBool`
 
