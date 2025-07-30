@@ -348,12 +348,14 @@ final class DecodingConnectionTest extends ConnectionTestCase
         string $sql,
         array $parameters,
         array $decoderTypes,
+        ?string $indexedBy,
     ): void {
         // -- Act
         $result = $this->decodingConnection->fetchAllAssociative(
             sql: $sql,
             parameters: $parameters,
             decoderTypes: $decoderTypes,
+            indexedBy: $indexedBy,
         );
 
         // -- Assert
@@ -366,12 +368,38 @@ final class DecodingConnectionTest extends ConnectionTestCase
      *     sql: string,
      *     parameters: array,
      *     decoderTypes: array<string, DTO\DecoderType>,
+     *     indexedBy: string | null,
      * }>
      */
     public static function fetchAllAssociativeDataProvider(): array
     {
         return [
-            'simple row without decoder types' => [
+            'simple rows without decoder types and index by function' => [
+                'expectedResult' => [
+                    '8c4b339b-75f4-499d-bf3a-56547b212aae' => [
+                        'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                        'name' => 'John Doe',
+                    ],
+                    '16092d20-c57d-44e0-ac87-3eff8b6bcd1e' => [
+                        'userId' => '16092d20-c57d-44e0-ac87-3eff8b6bcd1e',
+                        'name' => 'John Doe',
+                    ],
+                ],
+                'sql' => <<<'SQL'
+                    SELECT
+                        user_id AS "userId",
+                        name
+                    FROM (
+                        VALUES
+                            ('8c4b339b-75f4-499d-bf3a-56547b212aae', 'John Doe'),
+                            ('16092d20-c57d-44e0-ac87-3eff8b6bcd1e', 'John Doe')
+                    ) AS users(user_id, name)
+                    SQL,
+                'parameters' => [],
+                'decoderTypes' => [],
+                'indexedBy' => 'userId',
+            ],
+            'simple rows without decoder types' => [
                 'expectedResult' => [
                     [
                         'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
@@ -394,6 +422,7 @@ final class DecodingConnectionTest extends ConnectionTestCase
                     SQL,
                 'parameters' => [],
                 'decoderTypes' => [],
+                'indexedBy' => null,
             ],
             'row with json decoding and parameter' => [
                 'expectedResult' => [
@@ -419,6 +448,7 @@ final class DecodingConnectionTest extends ConnectionTestCase
                 'decoderTypes' => [
                     'accessibleProjects' => DTO\DecoderType::JSON,
                 ],
+                'indexedBy' => null,
             ],
             'no rows' => [
                 'expectedResult' => [],
@@ -432,6 +462,7 @@ final class DecodingConnectionTest extends ConnectionTestCase
                     SQL,
                 'parameters' => [],
                 'decoderTypes' => [],
+                'indexedBy' => null,
             ],
         ];
     }

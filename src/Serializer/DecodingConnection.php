@@ -77,13 +77,23 @@ final readonly class DecodingConnection
         array $parameters = [],
         array $parameterTypes = [],
         array $decoderTypes = [],
+        ?string $indexedBy = null,
     ): array {
         /** @var array<int, array<string, mixed>> $result */
         $result = $this->connection->fetchAllAssociative($sql, $parameters, $parameterTypes);
 
         self::decodeResults($result, $decoderTypes);
 
-        return $result;
+        if ($indexedBy === null) {
+            return $result;
+        }
+
+        $resultWithIndex = [];
+        foreach ($result as $row) {
+            $resultWithIndex[$row[$indexedBy]] = $row;
+        }
+
+        return $resultWithIndex;
     }
 
     /**

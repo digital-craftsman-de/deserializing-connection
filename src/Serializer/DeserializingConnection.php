@@ -200,6 +200,7 @@ final readonly class DeserializingConnection
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
      * @param array<string, DTO\DecoderType>                                       $decoderTypes
      * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
+     * @param \Closure(mixed $item): string|null                                   $indexedBy
      *
      * @return list<T>
      */
@@ -210,10 +211,10 @@ final readonly class DeserializingConnection
         array $parameterTypes = [],
         array $decoderTypes = [],
         array $resultTransformers = [],
+        ?\Closure $indexedBy = null,
     ): array {
         $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
 
-        /** @var list<array> $result */
         $result = $this->decodingConnection->fetchAllAssociative(
             $sql,
             $parameters,
@@ -228,7 +229,23 @@ final readonly class DeserializingConnection
             );
         }
 
-        return $this->typedDenormalizer->denormalizeArray($result, $class);
+        $denormalizedResult = $this->typedDenormalizer->denormalizeArray($result, $class);
+
+        if ($indexedBy === null) {
+            return $denormalizedResult;
+        }
+
+        $indexedResult = [];
+        foreach ($denormalizedResult as $item) {
+            $index = $indexedBy($item);
+            if (!is_string($index)) {
+                throw new Exception\IndexMustBeString();
+            }
+
+            $indexedResult[$index] = $item;
+        }
+
+        return $indexedResult;
     }
 
     /**
