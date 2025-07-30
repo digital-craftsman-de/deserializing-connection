@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
-use DigitalCraftsman\DeserializingConnection\Serializer\DTO\DecoderType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Type;
 
@@ -90,7 +89,6 @@ final readonly class DecodingConnection
     /**
      * @param list<mixed>|array<string, mixed>                                     $parameters
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
-     * @param array<string, DTO\DecoderType>                                       $decoderTypes
      */
     public function fetchFirstColumn(
         string $sql,
