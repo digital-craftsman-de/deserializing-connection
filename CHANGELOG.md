@@ -4,8 +4,10 @@
 
 - Added `DecodingConnection->fetchOne`.
 - Added `DecodingConnection->fetchFirstColumn`.
+- Added additional optional parameter `indexedBy` to `DecodingConnection::fetchAllAssociative`.
 - Added `DeserializingConnection->findOneFromSingleValue`.
 - Added `DeserializingConnection->getOneFromSingleValue`.
+- Added additional optional parameter `indexedBy` to `DeserializingConnection::findArray`.
 
 ## 0.5.2
 
