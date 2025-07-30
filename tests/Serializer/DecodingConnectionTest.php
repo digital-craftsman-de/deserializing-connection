@@ -122,6 +122,99 @@ final class DecodingConnectionTest extends ConnectionTestCase
     }
 
     #[Test]
+    #[DataProvider('fetchFirstColumnDataProvider')]
+    public function fetch_first_column_works(
+        ?array $expectedResult,
+        string $sql,
+        array $parameters,
+        array $parameterTypes,
+        ?DTO\DecoderType $decoderType,
+    ): void {
+        // -- Act & Assert
+        try {
+            $result = $this->decodingConnection->fetchFirstColumn(
+                sql: $sql,
+                parameters: $parameters,
+                parameterTypes: $parameterTypes,
+                decoderType: $decoderType,
+            );
+            self::assertSame($expectedResult, $result);
+        } catch (\Throwable $exception) {
+            $result = $exception::class;
+            self::assertSame($expectedResult, $result);
+        }
+    }
+
+    /**
+     * @return array<string, array{
+     *     expectedResult: array | null,
+     *     sql: string,
+     *     parameters: array,
+     *     parameterTypes: array,
+     *     decoderType: DTO\DecoderType | null,
+     * }>
+     */
+    public static function fetchFirstColumnDataProvider(): array
+    {
+        return [
+            'simple row without decoder types' => [
+                'expectedResult' => [
+                    '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                    '16092d20-c57d-44e0-ac87-3eff8b6bcd1e',
+                ],
+                'sql' => <<<'SQL'
+                    SELECT
+                        user_id
+                    FROM (
+                        VALUES
+                            ('8c4b339b-75f4-499d-bf3a-56547b212aae'),
+                            ('16092d20-c57d-44e0-ac87-3eff8b6bcd1e')
+                    ) AS users(user_id)
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => null,
+            ],
+            'bool rows with decoder types' => [
+                'expectedResult' => [
+                    true,
+                    null,
+                    false,
+                    false,
+                ],
+                'sql' => <<<'SQL'
+                    SELECT
+                        flag
+                    FROM (
+                        VALUES
+                            ('true'),
+                            (null),
+                            ('false'),
+                            (false)
+                    ) AS flags(flag)
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => DTO\DecoderType::NULLABLE_BOOL,
+            ],
+            'no rows' => [
+                'expectedResult' => [],
+                'sql' => <<<'SQL'
+                    WITH empty_table AS (
+                        SELECT 1
+                        WHERE false
+                    )
+                    SELECT *
+                    FROM empty_table
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => null,
+            ],
+        ];
+    }
+
+    #[Test]
     #[DataProvider('fetchAssociativeDataProvider')]
     public function fetch_associative_works(
         ?array $expectedResult,

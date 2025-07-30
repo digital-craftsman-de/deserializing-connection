@@ -99,7 +99,11 @@ final readonly class DecodingConnection
         /** @var array<int, array<string, mixed>> $result */
         $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
 
-        // TODO: Decode results
+        if ($decoderType !== null) {
+            foreach ($result as $key => $value) {
+                $result[$key] = self::decodeValue($value, $decoderType);
+            }
+        }
 
         return $result;
     }
