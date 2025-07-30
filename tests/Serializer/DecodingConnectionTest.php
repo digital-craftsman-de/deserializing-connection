@@ -8,6 +8,7 @@ use DigitalCraftsman\DeserializingConnection\Test\ConnectionTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\ExpectationFailedException;
 
 #[CoversClass(DecodingConnection::class)]
 #[CoversClass(Exception\QueryDidNotReturnExactlyOneResult::class)]
@@ -46,6 +47,10 @@ final class DecodingConnectionTest extends ConnectionTestCase
             );
             self::assertEquals($expectedResult, $result);
         } catch (\Throwable $exception) {
+            if ($exception instanceof ExpectationFailedException) {
+                throw $exception;
+            }
+
             $result = $exception::class;
             self::assertSame($expectedResult, $result);
         }
@@ -141,6 +146,10 @@ final class DecodingConnectionTest extends ConnectionTestCase
             );
             self::assertSame($expectedResult, $result);
         } catch (\Throwable $exception) {
+            if ($exception instanceof ExpectationFailedException) {
+                throw $exception;
+            }
+
             $result = $exception::class;
             self::assertSame($expectedResult, $result);
         }
@@ -198,6 +207,36 @@ final class DecodingConnectionTest extends ConnectionTestCase
                 'parameterTypes' => [],
                 'decoderType' => DTO\DecoderType::NULLABLE_BOOL,
             ],
+            'json rows with decoder types' => [
+                'expectedResult' => [
+                    [
+                        'name' => 'John Doe',
+                        'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                    ],
+                    [
+                        'name' => 'Jane Doe',
+                        'userId' => '16092d20-c57d-44e0-ac87-3eff8b6bcd1e',
+                    ],
+                ],
+                'sql' => <<<'SQL'
+                    SELECT
+                        user_identification
+                    FROM (
+                        VALUES
+                            (jsonb_build_object(
+                                'userId', '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                                'name', 'John Doe'
+                            )),
+                            (jsonb_build_object(
+                                'userId', '16092d20-c57d-44e0-ac87-3eff8b6bcd1e',
+                                'name', 'Jane Doe'
+                            ))
+                    ) AS flags(user_identification)
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => DTO\DecoderType::JSON,
+            ],
             'no rows' => [
                 'expectedResult' => [],
                 'sql' => <<<'SQL'
@@ -232,6 +271,10 @@ final class DecodingConnectionTest extends ConnectionTestCase
             );
             self::assertSame($expectedResult, $result);
         } catch (\Throwable $exception) {
+            if ($exception instanceof ExpectationFailedException) {
+                throw $exception;
+            }
+
             $result = $exception::class;
             self::assertSame($expectedResult, $result);
         }
@@ -404,6 +447,10 @@ final class DecodingConnectionTest extends ConnectionTestCase
             $result = $this->decodingConnection->fetchBool($sql);
             self::assertSame($expectedResult, $result);
         } catch (\Throwable $exception) {
+            if ($exception instanceof ExpectationFailedException) {
+                throw $exception;
+            }
+
             $result = $exception::class;
             self::assertSame($expectedResult, $result);
         }
@@ -461,6 +508,10 @@ final class DecodingConnectionTest extends ConnectionTestCase
             $result = $this->decodingConnection->fetchInt($sql);
             self::assertSame($expectedResult, $result);
         } catch (\Throwable $exception) {
+            if ($exception instanceof ExpectationFailedException) {
+                throw $exception;
+            }
+
             $result = $exception::class;
             self::assertSame($expectedResult, $result);
         }
