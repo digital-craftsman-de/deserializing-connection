@@ -98,8 +98,8 @@ final readonly class ResultTransformerRunner
     public function transformItem(
         DTO\ResultTransformer $transformer,
         mixed &$item,
-        array $result,
-        array $resultOfLevel,
+        mixed $result,
+        mixed $resultOfLevel,
     ): mixed {
         if ($item !== null) {
             $payload = $transformer->denormalizeResultToClass !== null
