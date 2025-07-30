@@ -25,6 +25,7 @@ final class TypedDenormalizerTest extends TestCase
 {
     private TypedDenormalizer $typedDenormalizer;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

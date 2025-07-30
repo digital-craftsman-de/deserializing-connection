@@ -15,11 +15,13 @@ final readonly class Duration implements IntNormalizable
 
     // -- Int normalizable
 
+    #[\Override]
     public static function denormalize(int $data): self
     {
         return new self($data);
     }
 
+    #[\Override]
     public function normalize(): int
     {
         return $this->duration;

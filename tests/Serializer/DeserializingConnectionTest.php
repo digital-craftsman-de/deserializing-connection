@@ -36,6 +36,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
 {
     private DeserializingConnection $deserializingConnection;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

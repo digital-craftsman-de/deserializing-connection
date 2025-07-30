@@ -42,6 +42,7 @@ final readonly class ResultTransformers implements \IteratorAggregate
         }
     }
 
+    #[\Override]
     public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->resultTransformers);

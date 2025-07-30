@@ -26,6 +26,7 @@ final class ResultTransformerRunnerTest extends TestCase
 {
     private ResultTransformerRunner $resultTransformerRunner;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

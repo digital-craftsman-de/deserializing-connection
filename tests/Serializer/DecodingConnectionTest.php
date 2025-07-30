@@ -17,6 +17,7 @@ final class DecodingConnectionTest extends ConnectionTestCase
 {
     private DecodingConnection $decodingConnection;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

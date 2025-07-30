@@ -17,6 +17,7 @@ final class DeserializingConnectionExtension extends Extension
     /**
      * @param array<mixed> $configs
      */
+    #[\Override]
     public function load(array $configs, ContainerBuilder $container): void
     {
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
