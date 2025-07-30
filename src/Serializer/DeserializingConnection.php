@@ -16,6 +16,12 @@ final readonly class DeserializingConnection
     }
 
     /**
+     * Can be used to get a single object from the database, returns null if no result is found. Use @see getOne instead if you want to
+     * throw an exception when no result is found.
+     *
+     * The denormalization step expects an array with every column being a key in the array. If instead you need a single value (will be
+     * most likely scalar and not an array) instead, you can use the @see findOneFromSingleValue method instead.
+     *
      * @template T of object
      *
      * @param non-empty-string                                                     $sql
@@ -57,6 +63,12 @@ final readonly class DeserializingConnection
     }
 
     /**
+     * Can be used to get a single object from the database, but throws an exception if no result is found. Use @see findOne if you want to
+     * return null when no result is found.
+     *
+     * The denormalization step expects an array with every column being a key in the array. If instead you need a single value (will be
+     * most likely scalar and not an array) instead, you can use the @see getOneFromSingleValue method instead.
+     *
      * @template T of object
      *
      * @param non-empty-string                                                     $sql
@@ -98,6 +110,12 @@ final readonly class DeserializingConnection
     }
 
     /**
+     * Can be used to get a single object from the database, returns null when no result is found. Use @see getOneFromSingleValue instead if
+     * you want to throw an exception when no result is found.
+     *
+     * The denormalization step expects a single value (will be most likely scalar and not an array). If instead you need an array with
+     * every column being a key in the array, you can use the @see findOne method instead.
+     *
      * @template T of object
      *
      * @param non-empty-string                                                     $sql
@@ -145,6 +163,12 @@ final readonly class DeserializingConnection
     }
 
     /**
+     * Can be used to get a single object from the database, but throws an exception if no result is found. Use @see findOneFromSingleValue
+     * instead if you want to return null when no result is found.
+     *
+     * The denormalization step expects a single value (will be most likely scalar and not an array). If instead you need an array with
+     * every column being a key in the array, you can use the @see getOne method instead.
+     *
      * @template T of object
      *
      * @param non-empty-string                                                     $sql

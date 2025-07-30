@@ -72,6 +72,24 @@ These are the offered methods:
 - `findArray` to return an array of objects.
 - `findGenerator` to return a generator that yields the objects.
 
+You can use `getOneFromSingleValue` when the denormalization step needs a single value instead of an associative array. This could look like this:
+
+```php
+$duration = $this->deserializingConnection->getOneFromSingleValue(
+    sql: <<<'SQL'
+        SELECT
+            duration
+        FROM
+            project
+        WHERE project_id = :projectId
+        SQL,
+    class: Duration::class,
+    parameters: [
+        'projectId' => $projectId,
+    ],
+);
+```
+
 ### Decoding types
 
 Part of the magic is the conversion from database types to PHP types. For example, when your SQL returns a JSON string, you usually need to convert it into an associative array prior to serialization. Here you just need to supply `decoderTypes` with the column name and the type of decoder you want to use. There are utilities that can handle nullable values or create a empty array when a JSON returns null (relevant for `jsonb_agg` calls). These are the available decoder types which are all pretty self-explanatory:
