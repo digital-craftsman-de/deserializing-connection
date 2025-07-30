@@ -17,6 +17,34 @@ final readonly class DecodingConnection
     /**
      * @param list<mixed>|array<string, mixed>                                     $parameters
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     *
+     * @return array<string, mixed>|null
+     */
+    public function fetchOne(
+        string $sql,
+        array $parameters = [],
+        array $parameterTypes = [],
+        ?DTO\DecoderType $decoderType = null,
+    ): mixed {
+        /** @var array<int, mixed> $result */
+        $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+
+        if (count($result) === 0) {
+            return null;
+        }
+
+        $firstResult = $result[0];
+
+        if ($decoderType !== null) {
+            return self::decodeValue($firstResult, $decoderType);
+        }
+
+        return $firstResult;
+    }
+
+    /**
+     * @param list<mixed>|array<string, mixed>                                     $parameters
+     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
      * @param array<string, DTO\DecoderType>                                       $decoderTypes
      *
      * @return array<string, mixed>|null
@@ -49,11 +77,43 @@ final readonly class DecodingConnection
         array $parameters = [],
         array $parameterTypes = [],
         array $decoderTypes = [],
+        ?string $indexedBy = null,
     ): array {
         /** @var array<int, array<string, mixed>> $result */
         $result = $this->connection->fetchAllAssociative($sql, $parameters, $parameterTypes);
 
         self::decodeResults($result, $decoderTypes);
+
+        if ($indexedBy === null) {
+            return $result;
+        }
+
+        $resultWithIndex = [];
+        foreach ($result as $row) {
+            $resultWithIndex[$row[$indexedBy]] = $row;
+        }
+
+        return $resultWithIndex;
+    }
+
+    /**
+     * @param list<mixed>|array<string, mixed>                                     $parameters
+     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     */
+    public function fetchFirstColumn(
+        string $sql,
+        array $parameters = [],
+        array $parameterTypes = [],
+        ?DTO\DecoderType $decoderType = null,
+    ): array {
+        /** @var array<int, array<string, mixed>> $result */
+        $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+
+        if ($decoderType !== null) {
+            foreach ($result as $key => $value) {
+                $result[$key] = self::decodeValue($value, $decoderType);
+            }
+        }
 
         return $result;
     }
@@ -149,38 +209,49 @@ final readonly class DecodingConnection
             }
 
             $decoderType = $decoderTypes[$itemKey];
-            $item[$itemKey] = match ($decoderType) {
-                DTO\DecoderType::INT => (int) $itemValue,
-                DTO\DecoderType::NULLABLE_INT => $itemValue === null
-                    ? null
-                    : (int) $itemValue,
-                DTO\DecoderType::FLOAT => (float) $itemValue,
-                DTO\DecoderType::NULLABLE_FLOAT => $itemValue === null
-                    ? null
-                    : (float) $itemValue,
-                DTO\DecoderType::JSON => json_decode(
-                    $itemValue,
+            $item[$itemKey] = self::decodeValue($itemValue, $decoderType);
+        }
+    }
+
+    public static function decodeValue(
+        mixed $value,
+        DTO\DecoderType $decoderType,
+    ): mixed {
+        return match ($decoderType) {
+            DTO\DecoderType::BOOL => filter_var($value, FILTER_VALIDATE_BOOL),
+            DTO\DecoderType::NULLABLE_BOOL => $value === null
+                ? null
+                : filter_var($value, FILTER_VALIDATE_BOOL),
+            DTO\DecoderType::INT => filter_var($value, FILTER_VALIDATE_INT),
+            DTO\DecoderType::NULLABLE_INT => $value === null
+                ? null
+                : filter_var($value, FILTER_VALIDATE_INT),
+            DTO\DecoderType::FLOAT => filter_var($value, FILTER_VALIDATE_FLOAT),
+            DTO\DecoderType::NULLABLE_FLOAT => $value === null
+                ? null
+                : filter_var($value, FILTER_VALIDATE_FLOAT),
+            DTO\DecoderType::JSON => json_decode(
+                $value,
+                true,
+                512,
+                \JSON_THROW_ON_ERROR,
+            ),
+            DTO\DecoderType::NULLABLE_JSON => $value === null
+                ? null
+                : json_decode(
+                    $value,
                     true,
                     512,
                     \JSON_THROW_ON_ERROR,
                 ),
-                DTO\DecoderType::NULLABLE_JSON => $itemValue === null
-                    ? null
-                    : json_decode(
-                        $itemValue,
-                        true,
-                        512,
-                        \JSON_THROW_ON_ERROR,
-                    ),
-                DTO\DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL => $itemValue === null
-                    ? []
-                    : json_decode(
-                        $itemValue,
-                        true,
-                        512,
-                        \JSON_THROW_ON_ERROR,
-                    ),
-            };
-        }
+            DTO\DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL => $value === null
+                ? []
+                : json_decode(
+                    $value,
+                    true,
+                    512,
+                    \JSON_THROW_ON_ERROR,
+                ),
+        };
     }
 }

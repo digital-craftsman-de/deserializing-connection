@@ -9,13 +9,13 @@
     "@default": true,
     "IncrementInteger": {
       "ignore": [
-        "DigitalCraftsman\\DeserializingConnection\\Serializer\\DecodingConnection::decodeItem",
+        "DigitalCraftsman\\DeserializingConnection\\Serializer\\DecodingConnection::decodeValue",
         "DigitalCraftsman\\DeserializingConnection\\Doctrine\\ArrayNormalizableType::convertToPHPValue"
       ]
     },
     "DecrementInteger": {
       "ignore": [
-        "DigitalCraftsman\\DeserializingConnection\\Serializer\\DecodingConnection::decodeItem",
+        "DigitalCraftsman\\DeserializingConnection\\Serializer\\DecodingConnection::decodeValue",
         "DigitalCraftsman\\DeserializingConnection\\Doctrine\\ArrayNormalizableType::convertToPHPValue"
       ]
     },
@@ -27,6 +27,12 @@
     "FalseValue": {
       "ignore": [
         "DigitalCraftsman\\DeserializingConnection\\Serializer\\DTO\\ResultTransformer::toRename"
+      ]
+    },
+    "PublicVisibility": {
+      "ignore": [
+        "DigitalCraftsman\\DeserializingConnection\\Serializer\\DecodingConnection::decodeValue",
+        "DigitalCraftsman\\DeserializingConnection\\Serializer\\ResultTransformerRunner::transformItem"
       ]
     }
   },

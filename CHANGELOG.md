@@ -1,12 +1,21 @@
 # Changelog
 
+## 0.6.0
+
+- Added `DecodingConnection->fetchOne`.
+- Added `DecodingConnection->fetchFirstColumn`.
+- Added additional optional parameter `indexedBy` to `DecodingConnection::fetchAllAssociative`.
+- Added `DeserializingConnection->findOneFromSingleValue`.
+- Added `DeserializingConnection->getOneFromSingleValue`.
+- Added additional optional parameter `indexedBy` to `DeserializingConnection::findArray`.
+
 ## 0.5.2
 
 - Updated `digital-craftsman/self-aware-normalizers` to use the first stable version.
 
 ## 0.5.1
 
-- Extended the return type and parameter type in `TypedDenormalizer` as it was to narrow to allow all relevant cases.
+- Extended the return type and parameter type in `TypedDenormalizer` as it was too narrow to allow all relevant cases.
 
 ## 0.5.0
 

@@ -11,6 +11,7 @@ use DigitalCraftsman\Ids\ValueObject\IdList;
  */
 final readonly class ProjectIdList extends IdList
 {
+    #[\Override]
     public static function handlesIdClass(): string
     {
         return ProjectId::class;

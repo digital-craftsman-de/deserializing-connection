@@ -12,6 +12,7 @@ abstract class ConnectionTestCase extends TestCase
 {
     protected Connection $connection;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

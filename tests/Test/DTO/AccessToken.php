@@ -30,6 +30,7 @@ final readonly class AccessToken implements ArrayNormalizable
      *   accessLevel: int,
      * } $data
      */
+    #[\Override]
     public static function denormalize(array $data): self
     {
         return new self(
@@ -44,6 +45,7 @@ final readonly class AccessToken implements ArrayNormalizable
      *   accessLevel: int,
      * }
      */
+    #[\Override]
     public function normalize(): array
     {
         return [

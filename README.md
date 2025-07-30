@@ -4,7 +4,7 @@ A Symfony bundle to get DTOs directly from the database. It's a simple and effic
 
 As it's a central part of an application, it's tested thoroughly (including mutation testing).
 
-[![Latest Stable Version](https://img.shields.io/badge/stable-0.5.2-blue)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
+[![Latest Stable Version](https://img.shields.io/badge/stable-0.6.0-blue)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
 [![PHP Version Require](https://img.shields.io/badge/php-8.3|8.4-5b5d95)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
 [![codecov](https://codecov.io/gh/digital-craftsman-de/deserializing-connection/branch/main/graph/badge.svg?token=BL0JKZYLBG)](https://codecov.io/gh/digital-craftsman-de/deserializing-connection)
 ![Packagist Downloads](https://img.shields.io/packagist/dt/digital-craftsman/deserializing-connection)
@@ -18,7 +18,7 @@ Install package through composer:
 composer require digital-craftsman/deserializing-connection
 ```
 
-> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.5.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
+> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.6.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
 
 ## Usage
 
@@ -67,13 +67,35 @@ These are the offered methods:
 
 - `getOne` to return one object or an exception when no result is found.
 - `findOne` like `getOne`, but returns `null` when no result is found.
+- `getOneFromSingleValue` to return one object from a single value or an exception when no result is found.
+- `findOneFromSingleValue` like `getOneFromSingleValue`, but returns `null` when no result is found.
 - `findArray` to return an array of objects.
 - `findGenerator` to return a generator that yields the objects.
+
+You can use `getOneFromSingleValue` when the denormalization step needs a single value instead of an associative array. This could look like this:
+
+```php
+$duration = $this->deserializingConnection->getOneFromSingleValue(
+    sql: <<<'SQL'
+        SELECT
+            duration
+        FROM
+            project
+        WHERE project_id = :projectId
+        SQL,
+    class: Duration::class,
+    parameters: [
+        'projectId' => $projectId,
+    ],
+);
+```
 
 ### Decoding types
 
 Part of the magic is the conversion from database types to PHP types. For example, when your SQL returns a JSON string, you usually need to convert it into an associative array prior to serialization. Here you just need to supply `decoderTypes` with the column name and the type of decoder you want to use. There are utilities that can handle nullable values or create a empty array when a JSON returns null (relevant for `jsonb_agg` calls). These are the available decoder types which are all pretty self-explanatory:
 
+- `BOOL`
+- `NULLABLE_BOOL`
 - `INT`
 - `NULLABLE_INT`
 - `FLOAT`
@@ -86,8 +108,10 @@ Part of the magic is the conversion from database types to PHP types. For exampl
 
 When you want to get a scalar value or do more complex stuff, you can use the underlying `DecodingConnection`. It offers the following methods:
 
+- `fetchOne`
 - `fetchAssociative`
 - `fetchAllAssociative`
+- `fetchFirstColumn`
 - `fetchInt`
 - `fetchBool`
 
@@ -154,7 +178,7 @@ The available variants of `ResultTransformer` are:
 
 The "rename" variants are simply renaming the property into the supplied name.
 
-Additional documentation for the key (how it can be used in a multi level result and for arrays) can be found in the [`ResultTransformerKey.php class`](./src/Serializer/DTO/ResultTransformerKey.php). 
+Additional documentation for the key (how it can be used in a multi level result and for arrays) can be found in the [`ResultTransformerKey class`](./src/Serializer/DTO/ResultTransformerKey.php). 
 
 ### Normalizers
 

@@ -8,6 +8,7 @@ use DigitalCraftsman\DeserializingConnection\Test\ConnectionTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\ExpectationFailedException;
 
 #[CoversClass(DecodingConnection::class)]
 #[CoversClass(Exception\QueryDidNotReturnExactlyOneResult::class)]
@@ -17,6 +18,7 @@ final class DecodingConnectionTest extends ConnectionTestCase
 {
     private DecodingConnection $decodingConnection;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -24,6 +26,232 @@ final class DecodingConnectionTest extends ConnectionTestCase
         $this->decodingConnection = new DecodingConnection(
             connection: $this->connection,
         );
+    }
+
+    #[Test]
+    #[DataProvider('fetchOneDataProvider')]
+    public function fetch_one_works(
+        mixed $expectedResult,
+        string $sql,
+        array $parameters,
+        array $parameterTypes,
+        ?DTO\DecoderType $decoderType,
+    ): void {
+        // -- Act & Assert
+        try {
+            $result = $this->decodingConnection->fetchOne(
+                sql: $sql,
+                parameters: $parameters,
+                parameterTypes: $parameterTypes,
+                decoderType: $decoderType,
+            );
+            self::assertEquals($expectedResult, $result);
+        } catch (\Throwable $exception) {
+            if ($exception instanceof ExpectationFailedException) {
+                throw $exception;
+            }
+
+            $result = $exception::class;
+            self::assertSame($expectedResult, $result);
+        }
+    }
+
+    /**
+     * @return array<string, array{
+     *     expectedResult: mixed,
+     *     sql: string,
+     *     parameters: array,
+     *     parameterTypes: array,
+     *     decoderType: DTO\DecoderType,
+     * }>
+     */
+    public static function fetchOneDataProvider(): array
+    {
+        return [
+            'json value with decoding' => [
+                'expectedResult' => [
+                    'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                    'name' => 'John Doe',
+                ],
+                'sql' => <<<'SQL'
+                    SELECT jsonb_build_object(
+                        'userId', '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                        'name', 'John Doe'
+                    )
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => DTO\DecoderType::JSON,
+            ],
+            'string without decoding' => [
+                'expectedResult' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                'sql' => <<<'SQL'
+                    SELECT '8c4b339b-75f4-499d-bf3a-56547b212aae'
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => null,
+            ],
+            'bool false with decoding' => [
+                'expectedResult' => false,
+                'sql' => <<<'SQL'
+                    SELECT 'false'
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => DTO\DecoderType::BOOL,
+            ],
+            'bool true with decoding' => [
+                'expectedResult' => true,
+                'sql' => <<<'SQL'
+                    SELECT true
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => DTO\DecoderType::BOOL,
+            ],
+            'no rows' => [
+                'expectedResult' => null,
+                'sql' => <<<'SQL'
+                    WITH empty_table AS (
+                        SELECT 1
+                        WHERE false
+                    )
+                    SELECT *
+                    FROM empty_table
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => null,
+            ],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('fetchFirstColumnDataProvider')]
+    public function fetch_first_column_works(
+        ?array $expectedResult,
+        string $sql,
+        array $parameters,
+        array $parameterTypes,
+        ?DTO\DecoderType $decoderType,
+    ): void {
+        // -- Act & Assert
+        try {
+            $result = $this->decodingConnection->fetchFirstColumn(
+                sql: $sql,
+                parameters: $parameters,
+                parameterTypes: $parameterTypes,
+                decoderType: $decoderType,
+            );
+            self::assertSame($expectedResult, $result);
+        } catch (\Throwable $exception) {
+            if ($exception instanceof ExpectationFailedException) {
+                throw $exception;
+            }
+
+            $result = $exception::class;
+            self::assertSame($expectedResult, $result);
+        }
+    }
+
+    /**
+     * @return array<string, array{
+     *     expectedResult: array | null,
+     *     sql: string,
+     *     parameters: array,
+     *     parameterTypes: array,
+     *     decoderType: DTO\DecoderType | null,
+     * }>
+     */
+    public static function fetchFirstColumnDataProvider(): array
+    {
+        return [
+            'simple row without decoder types' => [
+                'expectedResult' => [
+                    '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                    '16092d20-c57d-44e0-ac87-3eff8b6bcd1e',
+                ],
+                'sql' => <<<'SQL'
+                    SELECT
+                        user_id
+                    FROM (
+                        VALUES
+                            ('8c4b339b-75f4-499d-bf3a-56547b212aae'),
+                            ('16092d20-c57d-44e0-ac87-3eff8b6bcd1e')
+                    ) AS users(user_id)
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => null,
+            ],
+            'bool rows with decoder types' => [
+                'expectedResult' => [
+                    true,
+                    null,
+                    false,
+                    false,
+                ],
+                'sql' => <<<'SQL'
+                    SELECT
+                        flag
+                    FROM (
+                        VALUES
+                            ('true'),
+                            (null),
+                            ('false'),
+                            (false)
+                    ) AS flags(flag)
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => DTO\DecoderType::NULLABLE_BOOL,
+            ],
+            'json rows with decoder types' => [
+                'expectedResult' => [
+                    [
+                        'name' => 'John Doe',
+                        'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                    ],
+                    [
+                        'name' => 'Jane Doe',
+                        'userId' => '16092d20-c57d-44e0-ac87-3eff8b6bcd1e',
+                    ],
+                ],
+                'sql' => <<<'SQL'
+                    SELECT
+                        user_identification
+                    FROM (
+                        VALUES
+                            (jsonb_build_object(
+                                'userId', '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                                'name', 'John Doe'
+                            )),
+                            (jsonb_build_object(
+                                'userId', '16092d20-c57d-44e0-ac87-3eff8b6bcd1e',
+                                'name', 'Jane Doe'
+                            ))
+                    ) AS flags(user_identification)
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => DTO\DecoderType::JSON,
+            ],
+            'no rows' => [
+                'expectedResult' => [],
+                'sql' => <<<'SQL'
+                    WITH empty_table AS (
+                        SELECT 1
+                        WHERE false
+                    )
+                    SELECT *
+                    FROM empty_table
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => null,
+            ],
+        ];
     }
 
     #[Test]
@@ -43,6 +271,10 @@ final class DecodingConnectionTest extends ConnectionTestCase
             );
             self::assertSame($expectedResult, $result);
         } catch (\Throwable $exception) {
+            if ($exception instanceof ExpectationFailedException) {
+                throw $exception;
+            }
+
             $result = $exception::class;
             self::assertSame($expectedResult, $result);
         }
@@ -116,12 +348,14 @@ final class DecodingConnectionTest extends ConnectionTestCase
         string $sql,
         array $parameters,
         array $decoderTypes,
+        ?string $indexedBy,
     ): void {
         // -- Act
         $result = $this->decodingConnection->fetchAllAssociative(
             sql: $sql,
             parameters: $parameters,
             decoderTypes: $decoderTypes,
+            indexedBy: $indexedBy,
         );
 
         // -- Assert
@@ -134,12 +368,38 @@ final class DecodingConnectionTest extends ConnectionTestCase
      *     sql: string,
      *     parameters: array,
      *     decoderTypes: array<string, DTO\DecoderType>,
+     *     indexedBy: string | null,
      * }>
      */
     public static function fetchAllAssociativeDataProvider(): array
     {
         return [
-            'simple row without decoder types' => [
+            'simple rows without decoder types and index by function' => [
+                'expectedResult' => [
+                    '8c4b339b-75f4-499d-bf3a-56547b212aae' => [
+                        'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                        'name' => 'John Doe',
+                    ],
+                    '16092d20-c57d-44e0-ac87-3eff8b6bcd1e' => [
+                        'userId' => '16092d20-c57d-44e0-ac87-3eff8b6bcd1e',
+                        'name' => 'John Doe',
+                    ],
+                ],
+                'sql' => <<<'SQL'
+                    SELECT
+                        user_id AS "userId",
+                        name
+                    FROM (
+                        VALUES
+                            ('8c4b339b-75f4-499d-bf3a-56547b212aae', 'John Doe'),
+                            ('16092d20-c57d-44e0-ac87-3eff8b6bcd1e', 'John Doe')
+                    ) AS users(user_id, name)
+                    SQL,
+                'parameters' => [],
+                'decoderTypes' => [],
+                'indexedBy' => 'userId',
+            ],
+            'simple rows without decoder types' => [
                 'expectedResult' => [
                     [
                         'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
@@ -162,6 +422,7 @@ final class DecodingConnectionTest extends ConnectionTestCase
                     SQL,
                 'parameters' => [],
                 'decoderTypes' => [],
+                'indexedBy' => null,
             ],
             'row with json decoding and parameter' => [
                 'expectedResult' => [
@@ -187,6 +448,7 @@ final class DecodingConnectionTest extends ConnectionTestCase
                 'decoderTypes' => [
                     'accessibleProjects' => DTO\DecoderType::JSON,
                 ],
+                'indexedBy' => null,
             ],
             'no rows' => [
                 'expectedResult' => [],
@@ -200,6 +462,7 @@ final class DecodingConnectionTest extends ConnectionTestCase
                     SQL,
                 'parameters' => [],
                 'decoderTypes' => [],
+                'indexedBy' => null,
             ],
         ];
     }
@@ -215,6 +478,10 @@ final class DecodingConnectionTest extends ConnectionTestCase
             $result = $this->decodingConnection->fetchBool($sql);
             self::assertSame($expectedResult, $result);
         } catch (\Throwable $exception) {
+            if ($exception instanceof ExpectationFailedException) {
+                throw $exception;
+            }
+
             $result = $exception::class;
             self::assertSame($expectedResult, $result);
         }
@@ -272,6 +539,10 @@ final class DecodingConnectionTest extends ConnectionTestCase
             $result = $this->decodingConnection->fetchInt($sql);
             self::assertSame($expectedResult, $result);
         } catch (\Throwable $exception) {
+            if ($exception instanceof ExpectationFailedException) {
+                throw $exception;
+            }
+
             $result = $exception::class;
             self::assertSame($expectedResult, $result);
         }
@@ -416,6 +687,11 @@ final class DecodingConnectionTest extends ConnectionTestCase
                 'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
                 'name' => 'John Doe',
 
+                'bool' => 'false',
+
+                'nullableBool' => null,
+                'nullableBoolWithValue' => 'false',
+
                 'int' => '1',
 
                 'nullableInt' => null,
@@ -436,6 +712,11 @@ final class DecodingConnectionTest extends ConnectionTestCase
             ],
         ];
         $decoderTypes = [
+            'bool' => DTO\DecoderType::BOOL,
+
+            'nullableBool' => DTO\DecoderType::NULLABLE_BOOL,
+            'nullableBoolWithValue' => DTO\DecoderType::NULLABLE_BOOL,
+
             'int' => DTO\DecoderType::INT,
 
             'nullableInt' => DTO\DecoderType::NULLABLE_INT,
@@ -467,6 +748,11 @@ final class DecodingConnectionTest extends ConnectionTestCase
                 [
                     'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
                     'name' => 'John Doe',
+
+                    'bool' => false,
+
+                    'nullableBool' => null,
+                    'nullableBoolWithValue' => false,
 
                     'int' => 1,
 

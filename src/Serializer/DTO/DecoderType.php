@@ -6,6 +6,8 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer\DTO;
 
 enum DecoderType
 {
+    case BOOL;
+    case NULLABLE_BOOL;
     case INT;
     case NULLABLE_INT;
     case FLOAT;

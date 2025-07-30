@@ -26,6 +26,7 @@ final readonly class User implements ArrayNormalizable
 
     // -- Array normalizable
 
+    #[\Override]
     public static function denormalize(array $data): self
     {
         return new self(
@@ -39,6 +40,7 @@ final readonly class User implements ArrayNormalizable
         );
     }
 
+    #[\Override]
     public function normalize(): array
     {
         return [

@@ -81,25 +81,45 @@ final readonly class ResultTransformerRunner
         }
 
         if ($transformer->transformer !== null) {
-            if ($resultOfLevel[$levelKey] !== null) {
-                $payload = $transformer->denormalizeResultToClass !== null
-                    ? $this->typedDenormalizer->denormalize($resultOfLevel[$levelKey], $transformer->denormalizeResultToClass)
-                    : $resultOfLevel[$levelKey];
-            } else {
-                $payload = null;
-            }
-
-            $transformedPayload = $transformer->transformer->__invoke($payload, $resultOfLevel, $result);
-
-            $resultOfLevel[$levelKey] = $transformer->isTransformedResultNormalized
-                && $transformedPayload !== null
-                ? $this->typedDenormalizer->normalize($transformedPayload)
-                : $transformedPayload;
+            $resultOfLevel[$levelKey] = $this->transformItem(
+                transformer: $transformer,
+                item: $resultOfLevel[$levelKey],
+                result: $result,
+                resultOfLevel: $resultOfLevel,
+            );
         }
 
         if ($transformer->renameTo !== null) {
             $resultOfLevel[$transformer->renameTo] = $resultOfLevel[$levelKey];
             unset($resultOfLevel[$levelKey]);
         }
+    }
+
+    public function transformItem(
+        DTO\ResultTransformer $transformer,
+        mixed &$item,
+        mixed $result,
+        mixed $resultOfLevel,
+    ): mixed {
+        if ($item !== null) {
+            $payload = $transformer->denormalizeResultToClass !== null
+                ? $this->typedDenormalizer->denormalize($item, $transformer->denormalizeResultToClass)
+                : $item;
+        } else {
+            $payload = null;
+        }
+
+        /**
+         * It's only called when a transformer is defined.
+         *
+         * @var \Closure(mixed $payload, array $resultOfLevel, array $result): mixed $transformerFunction
+         */
+        $transformerFunction = $transformer->transformer;
+        $transformedPayload = $transformerFunction->__invoke($payload, $resultOfLevel, $result);
+
+        return $transformer->isTransformedResultNormalized
+            && $transformedPayload !== null
+            ? $this->typedDenormalizer->normalize($transformedPayload)
+            : $transformedPayload;
     }
 }

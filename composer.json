@@ -10,8 +10,8 @@
     "digital-craftsman/self-aware-normalizers": "^1.0.0"
   },
   "require-dev": {
-    "vimeo/psalm": "^6.0.0",
-    "friendsofphp/php-cs-fixer": "^v3.68.5",
+    "vimeo/psalm": "^6.7.1",
+    "friendsofphp/php-cs-fixer": "^v3.69.0",
     "phpunit/phpunit": "^10.5",
     "infection/infection": "0.29.*",
     "symfony/property-access": "^7.1",
