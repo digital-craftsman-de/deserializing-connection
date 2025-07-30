@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
+use DigitalCraftsman\DeserializingConnection\Serializer\DTO\DecoderType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Type;
 
@@ -26,18 +27,20 @@ final readonly class DecodingConnection
         array $parameterTypes = [],
         ?DTO\DecoderType $decoderType = null,
     ): mixed {
-        /** @var mixed|false $result */
-        $result = $this->connection->fetchOne($sql, $parameters, $parameterTypes);
+        /** @var array<int, mixed> $result */
+        $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
 
-        if ($result === false) {
+        if (count($result) === 0) {
             return null;
         }
 
+        $firstResult = $result[0];
+
         if ($decoderType !== null) {
-            self::decodeValue($result, $decoderType);
+            return self::decodeValue($firstResult, $decoderType);
         }
 
-        return $result;
+        return $firstResult;
     }
 
     /**
@@ -203,14 +206,18 @@ final readonly class DecodingConnection
         DTO\DecoderType $decoderType,
     ): mixed {
         return match ($decoderType) {
-            DTO\DecoderType::INT => (int) $value,
+            DTO\DecoderType::BOOL => filter_var($value, FILTER_VALIDATE_BOOL),
+            DTO\DecoderType::NULLABLE_BOOL => $value === null
+                ? null
+                : filter_var($value, FILTER_VALIDATE_BOOL),
+            DTO\DecoderType::INT => filter_var($value, FILTER_VALIDATE_INT),
             DTO\DecoderType::NULLABLE_INT => $value === null
                 ? null
-                : (int) $value,
-            DTO\DecoderType::FLOAT => (float) $value,
+                : filter_var($value, FILTER_VALIDATE_INT),
+            DTO\DecoderType::FLOAT => filter_var($value, FILTER_VALIDATE_FLOAT),
             DTO\DecoderType::NULLABLE_FLOAT => $value === null
                 ? null
-                : (float) $value,
+                : filter_var($value, FILTER_VALIDATE_FLOAT),
             DTO\DecoderType::JSON => json_decode(
                 $value,
                 true,

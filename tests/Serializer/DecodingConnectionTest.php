@@ -27,6 +27,101 @@ final class DecodingConnectionTest extends ConnectionTestCase
     }
 
     #[Test]
+    #[DataProvider('fetchOneDataProvider')]
+    public function fetch_one_works(
+        mixed $expectedResult,
+        string $sql,
+        array $parameters,
+        array $parameterTypes,
+        ?DTO\DecoderType $decoderType,
+    ): void {
+        // -- Act & Assert
+        try {
+            $result = $this->decodingConnection->fetchOne(
+                sql: $sql,
+                parameters: $parameters,
+                parameterTypes: $parameterTypes,
+                decoderType: $decoderType,
+            );
+            self::assertEquals($expectedResult, $result);
+        } catch (\Throwable $exception) {
+            $result = $exception::class;
+            self::assertSame($expectedResult, $result);
+        }
+    }
+
+    /**
+     * @return array<string, array{
+     *     expectedResult: mixed,
+     *     sql: string,
+     *     parameters: array,
+     *     parameterTypes: array,
+     *     decoderType: DTO\DecoderType,
+     * }>
+     */
+    public static function fetchOneDataProvider(): array
+    {
+        return [
+            'json value with decoding' => [
+                'expectedResult' => [
+                    'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                    'name' => 'John Doe',
+                ],
+                'sql' => <<<'SQL'
+                    SELECT jsonb_build_object(
+                        'userId', '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                        'name', 'John Doe'
+                    )
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => DTO\DecoderType::JSON,
+            ],
+            'string without decoding' => [
+                'expectedResult' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
+                'sql' => <<<'SQL'
+                    SELECT '8c4b339b-75f4-499d-bf3a-56547b212aae'
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => null,
+            ],
+            'bool false with decoding' => [
+                'expectedResult' => false,
+                'sql' => <<<'SQL'
+                    SELECT 'false'
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => DTO\DecoderType::BOOL,
+            ],
+            'bool true with decoding' => [
+                'expectedResult' => true,
+                'sql' => <<<'SQL'
+                    SELECT true
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => DTO\DecoderType::BOOL,
+            ],
+            'no rows' => [
+                'expectedResult' => null,
+                'sql' => <<<'SQL'
+                    WITH empty_table AS (
+                        SELECT 1
+                        WHERE false
+                    )
+                    SELECT *
+                    FROM empty_table
+                    SQL,
+                'parameters' => [],
+                'parameterTypes' => [],
+                'decoderType' => null,
+            ],
+        ];
+    }
+
+    #[Test]
     #[DataProvider('fetchAssociativeDataProvider')]
     public function fetch_associative_works(
         ?array $expectedResult,
@@ -416,6 +511,11 @@ final class DecodingConnectionTest extends ConnectionTestCase
                 'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
                 'name' => 'John Doe',
 
+                'bool' => 'false',
+
+                'nullableBool' => null,
+                'nullableBoolWithValue' => 'false',
+
                 'int' => '1',
 
                 'nullableInt' => null,
@@ -436,6 +536,11 @@ final class DecodingConnectionTest extends ConnectionTestCase
             ],
         ];
         $decoderTypes = [
+            'bool' => DTO\DecoderType::BOOL,
+
+            'nullableBool' => DTO\DecoderType::NULLABLE_BOOL,
+            'nullableBoolWithValue' => DTO\DecoderType::NULLABLE_BOOL,
+
             'int' => DTO\DecoderType::INT,
 
             'nullableInt' => DTO\DecoderType::NULLABLE_INT,
@@ -467,6 +572,11 @@ final class DecodingConnectionTest extends ConnectionTestCase
                 [
                     'userId' => '8c4b339b-75f4-499d-bf3a-56547b212aae',
                     'name' => 'John Doe',
+
+                    'bool' => false,
+
+                    'nullableBool' => null,
+                    'nullableBoolWithValue' => false,
 
                     'int' => 1,
 
