@@ -180,7 +180,7 @@ final readonly class DeserializingConnection
         }
 
         if ($resultTransformer !== null) {
-            $this->resultTransformerRunner->transformItem(
+            $result = $this->resultTransformerRunner->transformItem(
                 transformer: $resultTransformer,
                 item: $result,
                 result: $result,

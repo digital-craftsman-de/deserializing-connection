@@ -411,6 +411,103 @@ final class DeserializingConnectionTest extends ConnectionTestCase
     }
 
     #[Test]
+    public function get_one_from_single_value_works(): void
+    {
+        // -- Arrange
+        $userIdString = '417df760-0d16-408f-8201-ec7760dee9fb';
+        $expectedResult = UserId::fromString($userIdString);
+
+        // -- Act
+        $userId = $this->deserializingConnection->getOneFromSingleValue(
+            sql: <<<'SQL'
+                SELECT
+                    '417df760-0d16-408f-8201-ec7760dee9fb'
+                WHERE '417df760-0d16-408f-8201-ec7760dee9fb' = :userId
+                SQL,
+            class: UserId::class,
+            parameters: [
+                'userId' => $userIdString,
+            ],
+        );
+
+        // -- Assert
+        self::assertEquals($expectedResult, $userId);
+    }
+
+    #[Test]
+    public function get_one_from_single_value_works_with_decoding_and_result_transformation(): void
+    {
+        // -- Arrange
+        $expectedResult = new Duration(20);
+
+        // -- Act
+        $duration = $this->deserializingConnection->getOneFromSingleValue(
+            sql: <<<'SQL'
+                SELECT
+                    '15'
+                SQL,
+            class: Duration::class,
+            decoderType: DTO\DecoderType::INT,
+            resultTransformer: DTO\ResultTransformer::toTransform(
+                key: 'key',
+                denormalizeResultToClass: null,
+                transformer: static fn (int $value): int => $value + 5,
+                isTransformedResultNormalized: false,
+            ),
+        );
+
+        // -- Assert
+        self::assertEquals($expectedResult, $duration);
+    }
+
+    #[Test]
+    public function get_one_from_single_value_fails_without_results(): void
+    {
+        // -- Assert
+        $this->expectException(Exception\ElementNotFound::class);
+
+        // -- Act
+        $this->deserializingConnection->getOneFromSingleValue(
+            sql: <<<'SQL'
+                WITH empty_table AS (
+                    SELECT 1
+                    WHERE false
+                )
+                SELECT *
+                FROM empty_table
+                SQL,
+            class: UserId::class,
+        );
+    }
+
+    #[Test]
+    public function get_one_from_single_value_fails_with_renaming_in_transformation(): void
+    {
+        // -- Assert
+        $this->expectException(Exception\SingleValueTransformationMustNotContainRenaming::class);
+
+        // -- Act
+        $this->deserializingConnection->getOneFromSingleValue(
+            sql: <<<'SQL'
+                WITH empty_table AS (
+                    SELECT 1
+                    WHERE false
+                )
+                SELECT *
+                FROM empty_table
+                SQL,
+            class: UserId::class,
+            resultTransformer: DTO\ResultTransformer::toTransformAndRename(
+                key: 'key',
+                denormalizeResultToClass: null,
+                transformer: static fn (string $name): string => strtoupper($name),
+                isTransformedResultNormalized: false,
+                renameTo: 'renamedKey',
+            ),
+        );
+    }
+
+    #[Test]
     public function find_array_works(): void
     {
         // -- Arrange
