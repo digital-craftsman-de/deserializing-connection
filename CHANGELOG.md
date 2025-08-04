@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- Fixed return type annotation of `DeserializingConnection->findArray` depending on the `indexedBy` parameter.
+
 ## 0.6.0
 
 - Added `DecodingConnection->fetchOne`.

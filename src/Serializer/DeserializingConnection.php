@@ -217,6 +217,7 @@ final readonly class DeserializingConnection
 
     /**
      * @template T of object
+     * @template I of \Closure(mixed $item): string|null
      *
      * @param non-empty-string                                                     $sql
      * @param class-string<T>                                                      $class
@@ -224,9 +225,9 @@ final readonly class DeserializingConnection
      * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
      * @param array<string, DTO\DecoderType>                                       $decoderTypes
      * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
-     * @param \Closure(mixed $item): string|null                                   $indexedBy
+     * @param I                                                                    $indexedBy
      *
-     * @return list<T>
+     * @return (I is null ? list<T> : array<string, T>)
      */
     public function findArray(
         string $sql,
@@ -262,6 +263,9 @@ final readonly class DeserializingConnection
         $indexedResult = [];
         foreach ($denormalizedResult as $item) {
             $index = $indexedBy($item);
+            /**
+             * @psalm-suppress TypeDoesNotContainType Validation against missing compliance with Psalm.
+             */
             if (!is_string($index)) {
                 throw new Exception\IndexMustBeString();
             }
