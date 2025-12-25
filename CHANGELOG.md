@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0
+
+- Dropped support for PHP 8.3.
+- Added support for PHP 8.5.
+- Added support for Symfony ^8.0.
+- Dropped support for Symfony 7.3 and lower. Only the 7.4 LTS version is still supported.
+
 ## 0.6.1
 
 - Fixed return type annotation of `DeserializingConnection->findArray` depending on the `indexedBy` parameter.

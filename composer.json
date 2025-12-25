@@ -5,8 +5,8 @@
   "type": "symfony-bundle",
   "require": {
     "php": "8.4.*|8.5.*",
-    "symfony/framework-bundle": "^7.1|^8.0",
-    "symfony/serializer": "^7.1|^8.0",
+    "symfony/framework-bundle": "^7.4|^8.0",
+    "symfony/serializer": "^7.4|^8.0",
     "doctrine/dbal": "^3.3.6",
     "digital-craftsman/self-aware-normalizers": "dev-php-update as 1.2.0"
   },
@@ -15,8 +15,8 @@
     "friendsofphp/php-cs-fixer": "^v3.69.0",
     "phpunit/phpunit": "^10.5",
     "infection/infection": "0.29.*",
-    "symfony/property-access": "^7.1|^8.0",
-    "symfony/property-info": "^7.1|^8.0",
+    "symfony/property-access": "^7.4|^8.0",
+    "symfony/property-info": "^7.4|^8.0",
     "digital-craftsman/ids": "dev-php-8-5 as 2.0.1"
   },
   "autoload": {

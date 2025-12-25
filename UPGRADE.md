@@ -1,5 +1,16 @@
 # Upgrade guide
 
+## From 0.6.* to 0.7.0
+
+### Dropped support for PHP 8.3
+
+Update to at least PHP 8.4.
+
+### Dropped support for Symfony 7.3 and lower
+
+Update to at least the LTS version 7.4.
+
+
 ## From 0.5.* to 0.6.0
 
 Nothing to do.
