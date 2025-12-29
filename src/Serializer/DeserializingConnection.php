@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Types\Type;
 
 final readonly class DeserializingConnection
@@ -24,12 +26,12 @@ final readonly class DeserializingConnection
      *
      * @template T of object
      *
-     * @param non-empty-string                                                     $sql
-     * @param class-string<T>                                                      $class
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
-     * @param array<string, DTO\DecoderType>                                       $decoderTypes
-     * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
+     * @param non-empty-string                                                        $sql
+     * @param class-string<T>                                                         $class
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
+     * @param array<string, DTO\DecoderType>                                          $decoderTypes
+     * @param array<int, DTO\ResultTransformer>                                       $resultTransformers
      *
      * @return T|null
      */
@@ -71,12 +73,12 @@ final readonly class DeserializingConnection
      *
      * @template T of object
      *
-     * @param non-empty-string                                                     $sql
-     * @param class-string<T>                                                      $class
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
-     * @param array<string, DTO\DecoderType>                                       $decoderTypes
-     * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
+     * @param non-empty-string                                                        $sql
+     * @param class-string<T>                                                         $class
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
+     * @param array<string, DTO\DecoderType>                                          $decoderTypes
+     * @param array<int, DTO\ResultTransformer>                                       $resultTransformers
      *
      * @return T
      */
@@ -118,10 +120,10 @@ final readonly class DeserializingConnection
      *
      * @template T of object
      *
-     * @param non-empty-string                                                     $sql
-     * @param class-string<T>                                                      $class
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     * @param non-empty-string                                                        $sql
+     * @param class-string<T>                                                         $class
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
      *
      * @return T|null
      */
@@ -171,10 +173,10 @@ final readonly class DeserializingConnection
      *
      * @template T of object
      *
-     * @param non-empty-string                                                     $sql
-     * @param class-string<T>                                                      $class
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     * @param non-empty-string                                                        $sql
+     * @param class-string<T>                                                         $class
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
      *
      * @return T
      */
@@ -219,13 +221,13 @@ final readonly class DeserializingConnection
      * @template T of object
      * @template I of \Closure(mixed $item): string|null
      *
-     * @param non-empty-string                                                     $sql
-     * @param class-string<T>                                                      $class
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
-     * @param array<string, DTO\DecoderType>                                       $decoderTypes
-     * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
-     * @param I                                                                    $indexedBy
+     * @param non-empty-string                                                        $sql
+     * @param class-string<T>                                                         $class
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
+     * @param array<string, DTO\DecoderType>                                          $decoderTypes
+     * @param array<int, DTO\ResultTransformer>                                       $resultTransformers
+     * @param I                                                                       $indexedBy
      *
      * @return (I is null ? list<T> : array<string, T>)
      */
@@ -279,12 +281,12 @@ final readonly class DeserializingConnection
     /**
      * @template T of object
      *
-     * @param non-empty-string                                                     $sql
-     * @param class-string<T>                                                      $class
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
-     * @param array<string, DTO\DecoderType>                                       $decoderTypes
-     * @param array<int, DTO\ResultTransformer>                                    $resultTransformers
+     * @param non-empty-string                                                        $sql
+     * @param class-string<T>                                                         $class
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
+     * @param array<string, DTO\DecoderType>                                          $decoderTypes
+     * @param array<int, DTO\ResultTransformer>                                       $resultTransformers
      *
      * @return \Generator<int, T>
      */

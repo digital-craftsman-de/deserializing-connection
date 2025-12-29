@@ -5,19 +5,19 @@
   "type": "symfony-bundle",
   "require": {
     "php": "8.4.*|8.5.*",
+    "digital-craftsman/self-aware-normalizers": "^1.2.0",
+    "doctrine/dbal": "^4.4",
     "symfony/framework-bundle": "^7.4|^8.0",
-    "symfony/serializer": "^7.4|^8.0",
-    "doctrine/dbal": "^3.3.6",
-    "digital-craftsman/self-aware-normalizers": "dev-php-update as 1.2.0"
+    "symfony/serializer": "^7.4|^8.0"
   },
   "require-dev": {
-    "vimeo/psalm": "^6.7.1",
     "friendsofphp/php-cs-fixer": "^v3.69.0",
-    "phpunit/phpunit": "^10.5",
+    "digital-craftsman/ids": "^2.3.0",
     "infection/infection": "0.29.*",
+    "phpunit/phpunit": "^10.5",
     "symfony/property-access": "^7.4|^8.0",
     "symfony/property-info": "^7.4|^8.0",
-    "digital-craftsman/ids": "dev-php-8-5 as 2.0.1"
+    "vimeo/psalm": "^6.7.1"
   },
   "autoload": {
     "psr-4": {
@@ -37,6 +37,7 @@
     }
   ],
   "config": {
+    "sort-packages": true,
     "allow-plugins": {
       "infection/extension-installer": true
     }

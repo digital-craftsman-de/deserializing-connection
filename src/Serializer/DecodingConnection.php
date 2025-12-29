@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Types\Type;
 
 final readonly class DecodingConnection
@@ -15,8 +17,8 @@ final readonly class DecodingConnection
     }
 
     /**
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
      *
      * @return array<string, mixed>|null
      */
@@ -43,9 +45,9 @@ final readonly class DecodingConnection
     }
 
     /**
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
-     * @param array<string, DTO\DecoderType>                                       $decoderTypes
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
+     * @param array<string, DTO\DecoderType>                                          $decoderTypes
      *
      * @return array<string, mixed>|null
      */
@@ -68,9 +70,9 @@ final readonly class DecodingConnection
     }
 
     /**
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
-     * @param array<string, DTO\DecoderType>                                       $decoderTypes
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
+     * @param array<string, DTO\DecoderType>                                          $decoderTypes
      */
     public function fetchAllAssociative(
         string $sql,
@@ -97,8 +99,8 @@ final readonly class DecodingConnection
     }
 
     /**
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
      */
     public function fetchFirstColumn(
         string $sql,
@@ -119,8 +121,8 @@ final readonly class DecodingConnection
     }
 
     /**
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
      *
      * @throws Exception\QueryDidNotReturnExactlyOneResult
      * @throws Exception\QueryDidNotReturnAnInt
@@ -146,8 +148,8 @@ final readonly class DecodingConnection
     }
 
     /**
-     * @param list<mixed>|array<string, mixed>                                     $parameters
-     * @param array<int, int|string|Type|null>|array<string, int|string|Type|null> $parameterTypes
+     * @param list<mixed>|array<string, mixed>                                        $parameters
+     * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
      *
      * @throws Exception\QueryDidNotReturnExactlyOneResult
      * @throws Exception\QueryDidNotReturnABoolean
