@@ -4,8 +4,8 @@ A Symfony bundle to get DTOs directly from the database. It's a simple and effic
 
 As it's a central part of an application, it's tested thoroughly (including mutation testing).
 
-[![Latest Stable Version](https://img.shields.io/badge/stable-0.6.1-blue)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
-[![PHP Version Require](https://img.shields.io/badge/php-8.3|8.4-5b5d95)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
+[![Latest Stable Version](https://img.shields.io/badge/stable-0.7.0-blue)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
+[![PHP Version Require](https://img.shields.io/badge/php-8.4|8.5-5b5d95)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
 [![codecov](https://codecov.io/gh/digital-craftsman-de/deserializing-connection/branch/main/graph/badge.svg?token=BL0JKZYLBG)](https://codecov.io/gh/digital-craftsman-de/deserializing-connection)
 ![Packagist Downloads](https://img.shields.io/packagist/dt/digital-craftsman/deserializing-connection)
 ![Packagist License](https://img.shields.io/packagist/l/digital-craftsman/deserializing-connection)
@@ -18,7 +18,7 @@ Install package through composer:
 composer require digital-craftsman/deserializing-connection
 ```
 
-> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.6.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
+> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.7.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
 
 ## Usage
 

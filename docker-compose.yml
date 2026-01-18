@@ -15,8 +15,8 @@ services:
     ports:
       - "5432:5432"
 
-  php-8.3:
-    image: ghcr.io/digital-craftsman-de/deserializing-connection-php-8.3
+  php-8.4:
+    image: ghcr.io/digital-craftsman-de/deserializing-connection-php-8.4
     env_file:
       - .env
     volumes:
@@ -26,8 +26,8 @@ services:
     depends_on:
       - db
 
-  php-8.4:
-    image: ghcr.io/digital-craftsman-de/deserializing-connection-php-8.4
+  php-8.5:
+    image: ghcr.io/digital-craftsman-de/deserializing-connection-php-8.5
     env_file:
       - .env
     volumes:

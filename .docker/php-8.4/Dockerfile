@@ -9,6 +9,7 @@ RUN apk add --update \
     make \
     linux-headers \
     curl \
+    postgresql-dev \
     postgresql-client
 
 # Add php extensions
