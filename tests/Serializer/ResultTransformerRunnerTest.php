@@ -199,9 +199,7 @@ final class ResultTransformerRunnerTest extends TestCase
                 DTO\ResultTransformer::toTransform(
                     key: 'projects.*.name',
                     denormalizeResultToClass: null,
-                    transformer: static function (string $name) {
-                        return strtoupper($name);
-                    },
+                    transformer: static fn (string $name) => strtoupper($name),
                     isTransformedResultNormalized: false,
                 ),
             ]),
@@ -210,6 +208,35 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Assert
         self::assertSame('PROJECT X', $result['projects'][0]['name']);
         self::assertSame('PROJECT Y', $result['projects'][1]['name']);
+    }
+
+    #[Test]
+    public function run_transformations_ignores_elements_in_array_that_are_null(): void
+    {
+        // -- Arrange
+        $result = [
+            'userId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+            'name' => 'John Doe',
+            'project' => [
+                'projectDefinition' => null,
+            ],
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: new DTO\ResultTransformers([
+                DTO\ResultTransformer::toTransform(
+                    key: 'project.projectDefinition.name',
+                    denormalizeResultToClass: null,
+                    transformer: static fn (string $name) => strtoupper($name),
+                    isTransformedResultNormalized: false,
+                ),
+            ]),
+        );
+
+        // -- Assert
+        self::assertNull($result['project']['projectDefinition']);
     }
 
     #[Test]

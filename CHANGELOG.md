@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1
+
+- Fixed handling of an array in result transformation when it's null. It's ignored now.
+
 ## 0.7.0
 
 - Added support for PHP 8.5.

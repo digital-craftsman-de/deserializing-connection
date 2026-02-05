@@ -61,6 +61,11 @@ final readonly class ResultTransformerRunner
             return;
         }
 
+        // It's possible that something that should be looped is null. In this case we can't run through it recursively.
+        if ($resultOfLevel[$levelKey] === null) {
+            return;
+        }
+
         $this->runRecursive(
             transformer: $transformer,
             result: $result,
