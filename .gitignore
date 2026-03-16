@@ -15,3 +15,6 @@ coverage.xml
 # .env files
 /.env*
 !.env.example
+
+# Claude
+/.claude/settings.local.json

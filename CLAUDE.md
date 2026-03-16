@@ -59,6 +59,7 @@ Key DTOs in `src/Serializer/DTO/`: `ResultTransformer` (transformation spec with
 - PHP-CS-Fixer with Symfony rules (no yoda style, trailing commas in multiline)
 - Psalm for static analysis
 - Infection mutation testing enforces 100% mutation score index
+- Every condition in an if or ternary operator must be in a separate line
 
 ## Testing
 
