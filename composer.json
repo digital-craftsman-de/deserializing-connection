@@ -1,6 +1,6 @@
 {
   "name": "digital-craftsman/deserializing-connection",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Get DTOs directly from the database",
   "type": "symfony-bundle",
   "require": {

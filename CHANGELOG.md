@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.2
+
+- Added missing explicit object check before denormalizing value for result transformer.
+
 ## 0.7.1
 
 - Fixed handling of an array in result transformation when it's null. It's ignored now.
