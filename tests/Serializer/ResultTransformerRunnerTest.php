@@ -22,6 +22,7 @@ use Symfony\Component\Serializer\Serializer;
 #[CoversClass(DTO\ResultTransformers::class)]
 #[CoversClass(DTO\ResultTransformer::class)]
 #[CoversClass(Exception\ResultTransformerKeyNotFound::class)]
+#[CoversClass(Exception\ItemToDenormalizeIsObject::class)]
 final class ResultTransformerRunnerTest extends TestCase
 {
     private ResultTransformerRunner $resultTransformerRunner;
@@ -401,6 +402,42 @@ final class ResultTransformerRunnerTest extends TestCase
         // -- Asser)t
         self::assertSame(5, $result['projects'][0]['token']['accessLevel']);
         self::assertNull($result['projects'][1]['token']);
+    }
+
+    #[Test]
+    public function run_transformations_fails_when_item_to_denormalize_is_object(): void
+    {
+        // -- Assert
+        $this->expectException(Exception\ItemToDenormalizeIsObject::class);
+
+        // -- Arrange
+        $result = [
+            'userId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+            'name' => 'John Doe',
+            'projects' => [
+                [
+                    'projectId' => '399ad4ea-5a85-470e-8283-308a26f9d519',
+                    'name' => 'Project X',
+                    'accessToken' => new AccessToken(
+                        token: '35c9c331-f185-42c6-9952-90150fc56735',
+                        accessLevel: 5,
+                    ),
+                ],
+            ],
+        ];
+
+        // -- Act
+        $this->resultTransformerRunner->runTransformations(
+            result: $result,
+            resultTransformers: new DTO\ResultTransformers([
+                DTO\ResultTransformer::toTransform(
+                    key: 'projects.*.accessToken',
+                    denormalizeResultToClass: AccessToken::class,
+                    transformer: static fn (?AccessToken $accessToken) => $accessToken?->increaseLevel(),
+                    isTransformedResultNormalized: true,
+                ),
+            ]),
+        );
     }
 
     #[Test]

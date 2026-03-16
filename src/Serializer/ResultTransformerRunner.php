@@ -107,6 +107,15 @@ final readonly class ResultTransformerRunner
         mixed $resultOfLevel,
     ): mixed {
         if ($item !== null) {
+            if ($transformer->denormalizeResultToClass !== null
+                && is_object($item)
+            ) {
+                throw new Exception\ItemToDenormalizeIsObject(
+                    $transformer->denormalizeResultToClass,
+                    $item::class,
+                );
+            }
+
             $payload = $transformer->denormalizeResultToClass !== null
                 ? $this->typedDenormalizer->denormalize($item, $transformer->denormalizeResultToClass)
                 : $item;
