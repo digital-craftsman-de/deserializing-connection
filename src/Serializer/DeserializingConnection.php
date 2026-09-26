@@ -79,8 +79,12 @@ final readonly class DeserializingConnection
      * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
      * @param array<string, DTO\DecoderType>                                          $decoderTypes
      * @param array<int, DTO\ResultTransformer>                                       $resultTransformers
+     * @param ?callable(): \Throwable                                                 $otherwiseThrow
      *
      * @return T
+     *
+     * @throws \Throwable
+     * @throws Exception\ElementNotFound
      */
     public function getOne(
         string $sql,
@@ -89,6 +93,7 @@ final readonly class DeserializingConnection
         array $parameterTypes = [],
         array $decoderTypes = [],
         array $resultTransformers = [],
+        ?callable $otherwiseThrow = null,
     ): ?object {
         $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
 
@@ -100,7 +105,9 @@ final readonly class DeserializingConnection
         );
 
         if ($result === null) {
-            throw new Exception\ElementNotFound();
+            throw $otherwiseThrow !== null
+                ? $otherwiseThrow()
+                : new Exception\ElementNotFound();
         }
 
         $this->resultTransformerRunner->runTransformations(
@@ -177,8 +184,12 @@ final readonly class DeserializingConnection
      * @param class-string<T>                                                         $class
      * @param list<mixed>|array<string, mixed>                                        $parameters
      * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
+     * @param ?callable(): \Throwable                                                 $otherwiseThrow
      *
      * @return T
+     *
+     * @throws \Throwable
+     * @throws Exception\ElementNotFound
      */
     public function getOneFromSingleValue(
         string $sql,
@@ -187,6 +198,7 @@ final readonly class DeserializingConnection
         array $parameterTypes = [],
         ?DTO\DecoderType $decoderType = null,
         ?DTO\ResultTransformer $resultTransformer = null,
+        ?callable $otherwiseThrow = null,
     ): object {
         if ($resultTransformer !== null
             && $resultTransformer->renameTo !== null
@@ -202,7 +214,9 @@ final readonly class DeserializingConnection
         );
 
         if ($result === null) {
-            throw new Exception\ElementNotFound();
+            throw $otherwiseThrow !== null
+                ? $otherwiseThrow()
+                : new Exception\ElementNotFound();
         }
 
         if ($resultTransformer !== null) {

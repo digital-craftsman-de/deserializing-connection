@@ -11,6 +11,7 @@ use DigitalCraftsman\DeserializingConnection\Test\DTO\Duration;
 use DigitalCraftsman\DeserializingConnection\Test\DTO\ProjectWithTimeEntries;
 use DigitalCraftsman\DeserializingConnection\Test\DTO\TimeEntry;
 use DigitalCraftsman\DeserializingConnection\Test\DTO\User;
+use DigitalCraftsman\DeserializingConnection\Test\Exception\UserNotFound;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\CompanyId;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectId;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectIdList;
@@ -320,6 +321,67 @@ final class DeserializingConnectionTest extends ConnectionTestCase
     }
 
     #[Test]
+    public function get_one_works_with_otherwise_throw(): void
+    {
+        // -- Arrange
+        $userIdString = '417df760-0d16-408f-8201-ec7760dee9fb';
+        $expectedResult = new User(
+            userId: UserId::fromString($userIdString),
+            name: 'John Doe',
+            accessibleProjects: new ProjectIdList([]),
+            companies: [],
+        );
+
+        // -- Act
+        $user = $this->deserializingConnection->getOne(
+            sql: <<<'SQL'
+                SELECT
+                    '417df760-0d16-408f-8201-ec7760dee9fb' AS "userId",
+                    'John Doe' AS name,
+                    '[]' AS "accessibleProjects",
+                    '[]' AS "companies"
+                WHERE '417df760-0d16-408f-8201-ec7760dee9fb' = :userId
+                SQL,
+            class: User::class,
+            parameters: [
+                'userId' => $userIdString,
+            ],
+            decoderTypes: [
+                'accessibleProjects' => DTO\DecoderType::JSON,
+                'companies' => DTO\DecoderType::JSON,
+            ],
+            otherwiseThrow: static fn () => new UserNotFound(),
+        );
+
+        // -- Assert
+        self::assertEquals($expectedResult, $user);
+    }
+
+    #[Test]
+    public function get_one_fails_without_result_with_otherwise_throw(): void
+    {
+        // -- Assert
+        $this->expectException(UserNotFound::class);
+
+        // -- Act
+        $this->deserializingConnection->getOne(
+            sql: <<<'SQL'
+                WITH empty_table AS (
+                    SELECT 1
+                    WHERE false
+                )
+                SELECT *
+                FROM empty_table
+                SQL,
+            class: User::class,
+            decoderTypes: [
+                'accessibleProjects' => DTO\DecoderType::JSON,
+            ],
+            otherwiseThrow: static fn () => new UserNotFound(),
+        );
+    }
+
+    #[Test]
     public function find_one_from_single_value_works(): void
     {
         // -- Arrange
@@ -483,6 +545,52 @@ final class DeserializingConnectionTest extends ConnectionTestCase
                 FROM empty_table
                 SQL,
             class: UserId::class,
+        );
+    }
+
+    #[Test]
+    public function get_one_from_single_value_works_with_otherwise_throw(): void
+    {
+        // -- Arrange
+        $userIdString = '417df760-0d16-408f-8201-ec7760dee9fb';
+        $expectedResult = UserId::fromString($userIdString);
+
+        // -- Act
+        $userId = $this->deserializingConnection->getOneFromSingleValue(
+            sql: <<<'SQL'
+                SELECT
+                    '417df760-0d16-408f-8201-ec7760dee9fb'
+                WHERE '417df760-0d16-408f-8201-ec7760dee9fb' = :userId
+                SQL,
+            class: UserId::class,
+            parameters: [
+                'userId' => $userIdString,
+            ],
+            otherwiseThrow: static fn () => new UserNotFound(),
+        );
+
+        // -- Assert
+        self::assertEquals($expectedResult, $userId);
+    }
+
+    #[Test]
+    public function get_one_from_single_value_fails_without_results_with_otherwise_throw(): void
+    {
+        // -- Assert
+        $this->expectException(UserNotFound::class);
+
+        // -- Act
+        $this->deserializingConnection->getOneFromSingleValue(
+            sql: <<<'SQL'
+                WITH empty_table AS (
+                    SELECT 1
+                    WHERE false
+                )
+                SELECT *
+                FROM empty_table
+                SQL,
+            class: UserId::class,
+            otherwiseThrow: static fn () => new UserNotFound(),
         );
     }
 
