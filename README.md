@@ -104,6 +104,17 @@ Part of the magic is the conversion from database types to PHP types. For exampl
 - `NULLABLE_JSON`
 - `JSON_WITH_EMPTY_ARRAY_ON_NULL`
 
+Decoder types can also target nested values with the same key syntax as the result transformers. Levels are separated with a dot `.` and all items of a list are targeted with `*`:
+
+```php
+decoderTypes: [
+    'projects' => DecoderType::JSON,
+    'projects.*.timeEntries.*.hours' => DecoderType::NULLABLE_FLOAT,
+],
+```
+
+Parent values are always decoded before the values nested in them, independent of the order in which they are defined. Missing keys and `null` values on the way to the nested value are ignored. Decoding is done before the result transformers are run.
+
 ### Decoding connection
 
 When you want to get a scalar value or do more complex stuff, you can use the underlying `DecodingConnection`. It offers the following methods:

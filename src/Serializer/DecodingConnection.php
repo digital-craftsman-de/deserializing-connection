@@ -184,17 +184,19 @@ final readonly class DecodingConnection
         array &$data,
         array $decoderTypes,
     ): void {
+        $decoderTypeLevels = self::decoderTypeLevels($decoderTypes);
+
         foreach ($data as &$item) {
-            self::decodeItem($item, $decoderTypes);
+            self::decodeItemWithLevels($item, $decoderTypeLevels);
         }
     }
 
     /**
+     * The keys of the decoder types can target nested values with a dotted path (e.g. "user.projects.*.name"). The same rules as for the
+     * result transformer keys apply, @see DTO\ResultTransformerKey.
+     *
      * @param array<string, mixed>           $item
      * @param array<string, DTO\DecoderType> $decoderTypes
-     *
-     * @psalm-suppress MixedAssignment Mixed is used here by design
-     * @psalm-suppress MixedArgument Mixed is used here by design
      *
      * @internal
      */
@@ -202,17 +204,120 @@ final readonly class DecodingConnection
         array &$item,
         array $decoderTypes,
     ): void {
-        $relevantKeys = array_keys($decoderTypes);
+        self::decodeItemWithLevels($item, self::decoderTypeLevels($decoderTypes));
+    }
 
-        foreach ($item as $itemKey => &$itemValue) {
-            if (!in_array($itemKey, $relevantKeys, true)) {
-                $item[$itemKey] = $itemValue;
-                continue;
+    /**
+     * Keys are sorted by their depth, so that a parent value (e.g. a JSON string) is always decoded before the values nested in it.
+     *
+     * @param array<string, DTO\DecoderType> $decoderTypes
+     *
+     * @return list<array{key: string, levels: non-empty-list<string>, decoderType: DTO\DecoderType}>
+     */
+    private static function decoderTypeLevels(array $decoderTypes): array
+    {
+        $decoderTypeLevels = [];
+        foreach ($decoderTypes as $key => $decoderType) {
+            $resultTransformerKey = new DTO\ResultTransformerKey($key);
+
+            $decoderTypeLevels[] = [
+                'key' => $resultTransformerKey->value,
+                'levels' => explode('.', $resultTransformerKey->value),
+                'decoderType' => $decoderType,
+            ];
+        }
+
+        usort(
+            $decoderTypeLevels,
+            static fn (array $a, array $b): int => count($a['levels']) <=> count($b['levels']),
+        );
+
+        return $decoderTypeLevels;
+    }
+
+    /**
+     * @param array<string, mixed>                                                                   $item
+     * @param list<array{key: string, levels: non-empty-list<string>, decoderType: DTO\DecoderType}> $decoderTypeLevels
+     *
+     * @psalm-suppress ReferenceConstraintViolation Only values are replaced, the keys of the item stay the same
+     */
+    private static function decodeItemWithLevels(
+        array &$item,
+        array $decoderTypeLevels,
+    ): void {
+        foreach ($decoderTypeLevels as $decoderTypeLevel) {
+            self::decodeRecursive(
+                data: $item,
+                key: $decoderTypeLevel['key'],
+                levels: $decoderTypeLevel['levels'],
+                levelIndex: 0,
+                decoderType: $decoderTypeLevel['decoderType'],
+            );
+        }
+    }
+
+    /**
+     * Missing keys and null values on the way to the value are ignored, the same way as missing keys on the first level are ignored.
+     *
+     * @param non-empty-list<string> $levels
+     *
+     * @psalm-suppress MixedAssignment Mixed is used here by design
+     * @psalm-suppress MixedArgument Mixed is used here by design
+     */
+    private static function decodeRecursive(
+        array &$data,
+        string $key,
+        array $levels,
+        int $levelIndex,
+        DTO\DecoderType $decoderType,
+    ): void {
+        $levelKey = $levels[$levelIndex];
+
+        if ($levelKey === DTO\ResultTransformerKey::ARRAY_KEY_IDENTIFIER) {
+            foreach ($data as &$element) {
+                if ($element === null) {
+                    continue;
+                }
+                if (!is_array($element)) {
+                    throw new Exception\DecoderTypeKeyLevelIsNotAnArray($key, $levelKey);
+                }
+
+                self::decodeRecursive(
+                    data: $element,
+                    key: $key,
+                    levels: $levels,
+                    levelIndex: $levelIndex + 1,
+                    decoderType: $decoderType,
+                );
             }
 
-            $decoderType = $decoderTypes[$itemKey];
-            $item[$itemKey] = self::decodeValue($itemValue, $decoderType);
+            return;
         }
+
+        if (!array_key_exists($levelKey, $data)) {
+            return;
+        }
+
+        if ($levelIndex === count($levels) - 1) {
+            $data[$levelKey] = self::decodeValue($data[$levelKey], $decoderType);
+
+            return;
+        }
+
+        if ($data[$levelKey] === null) {
+            return;
+        }
+        if (!is_array($data[$levelKey])) {
+            throw new Exception\DecoderTypeKeyLevelIsNotAnArray($key, $levelKey);
+        }
+
+        self::decodeRecursive(
+            data: $data[$levelKey],
+            key: $key,
+            levels: $levels,
+            levelIndex: $levelIndex + 1,
+            decoderType: $decoderType,
+        );
     }
 
     public static function decodeValue(

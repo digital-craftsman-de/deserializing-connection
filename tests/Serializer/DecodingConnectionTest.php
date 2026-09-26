@@ -14,6 +14,10 @@ use PHPUnit\Framework\ExpectationFailedException;
 #[CoversClass(Exception\QueryDidNotReturnExactlyOneResult::class)]
 #[CoversClass(Exception\QueryDidNotReturnAnInt::class)]
 #[CoversClass(Exception\QueryDidNotReturnABoolean::class)]
+#[CoversClass(Exception\DecoderTypeKeyLevelIsNotAnArray::class)]
+#[CoversClass(DTO\ResultTransformerKey::class)]
+#[CoversClass(DTO\Exception\ResultTransformationKeyCanNotStartWithAnArrayIdentifier::class)]
+#[CoversClass(DTO\Exception\ResultTransformationKeyCanNotEndWithAnArrayIdentifier::class)]
 final class DecodingConnectionTest extends ConnectionTestCase
 {
     private DecodingConnection $decodingConnection;
@@ -325,6 +329,56 @@ final class DecodingConnectionTest extends ConnectionTestCase
                     'accessibleProjects' => DTO\DecoderType::JSON,
                 ],
             ],
+            'row with nested decoding' => [
+                'expectedResult' => [
+                    'name' => 'Stark Industries',
+                    'projects' => [
+                        [
+                            'name' => 'Project 1',
+                            'timeEntries' => [
+                                [
+                                    'hours' => 2.0,
+                                ],
+                                [
+                                    'hours' => null,
+                                ],
+                            ],
+                        ],
+                        [
+                            'name' => 'Project 2',
+                            'timeEntries' => [
+                                [
+                                    'hours' => 1.5,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'sql' => <<<'SQL'
+                    SELECT
+                        'Stark Industries' AS name,
+                        jsonb_build_array(
+                            jsonb_build_object(
+                                'name', 'Project 1',
+                                'timeEntries', jsonb_build_array(
+                                    jsonb_build_object('hours', 2),
+                                    jsonb_build_object('hours', null)
+                                )
+                            ),
+                            jsonb_build_object(
+                                'name', 'Project 2',
+                                'timeEntries', jsonb_build_array(
+                                    jsonb_build_object('hours', 1.5)
+                                )
+                            )
+                        ) AS projects
+                    SQL,
+                'parameters' => [],
+                'decoderTypes' => [
+                    'projects' => DTO\DecoderType::JSON,
+                    'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+                ],
+            ],
             'no rows' => [
                 'expectedResult' => null,
                 'sql' => <<<'SQL'
@@ -447,6 +501,46 @@ final class DecodingConnectionTest extends ConnectionTestCase
                 ],
                 'decoderTypes' => [
                     'accessibleProjects' => DTO\DecoderType::JSON,
+                ],
+                'indexedBy' => null,
+            ],
+            'rows with nested decoding' => [
+                'expectedResult' => [
+                    [
+                        'name' => 'Stark Industries',
+                        'projects' => [
+                            [
+                                'name' => 'Project 1',
+                                'timeEntries' => [
+                                    [
+                                        'hours' => 2.0,
+                                    ],
+                                    [
+                                        'hours' => null,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'name' => 'Wayne Enterprises',
+                        'projects' => [],
+                    ],
+                ],
+                'sql' => <<<'SQL'
+                    SELECT
+                        name,
+                        projects
+                    FROM (
+                        VALUES
+                            ('Stark Industries', '[{"name": "Project 1", "timeEntries": [{"hours": 2}, {"hours": null}]}]'::jsonb),
+                            ('Wayne Enterprises', null)
+                    ) AS companies(name, projects)
+                    SQL,
+                'parameters' => [],
+                'decoderTypes' => [
+                    'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+                    'projects' => DTO\DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL,
                 ],
                 'indexedBy' => null,
             ],
@@ -780,6 +874,580 @@ final class DecodingConnectionTest extends ConnectionTestCase
                         'fdf7d3f4-7c17-4917-b637-d8baf13f2b07',
                         'b3b3b3b3-7c17-4917-b637-d8baf13f2b07',
                     ],
+                ],
+            ],
+            $results,
+        );
+    }
+
+    #[Test]
+    public function decode_item_works_on_second_level(): void
+    {
+        // -- Arrange
+        $item = [
+            'name' => 'John Doe',
+            'project' => [
+                'name' => 'Project 1',
+                'budget' => '1500',
+                'isArchived' => 'false',
+            ],
+        ];
+        $decoderTypes = [
+            'project.budget' => DTO\DecoderType::INT,
+            'project.isArchived' => DTO\DecoderType::BOOL,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                'name' => 'John Doe',
+                'project' => [
+                    'name' => 'Project 1',
+                    'budget' => 1500,
+                    'isArchived' => false,
+                ],
+            ],
+            $item,
+        );
+    }
+
+    #[Test]
+    public function decode_item_works_on_third_level(): void
+    {
+        // -- Arrange
+        $item = [
+            'name' => 'John Doe',
+            'project' => [
+                'name' => 'Project 1',
+                'responsible' => [
+                    'name' => 'Jane Doe',
+                    'hourlyRate' => 85,
+                    'settings' => '{"isNotifiedByEmail": true}',
+                ],
+            ],
+        ];
+        $decoderTypes = [
+            'project.responsible.hourlyRate' => DTO\DecoderType::FLOAT,
+            'project.responsible.settings' => DTO\DecoderType::JSON,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                'name' => 'John Doe',
+                'project' => [
+                    'name' => 'Project 1',
+                    'responsible' => [
+                        'name' => 'Jane Doe',
+                        'hourlyRate' => 85.0,
+                        'settings' => [
+                            'isNotifiedByEmail' => true,
+                        ],
+                    ],
+                ],
+            ],
+            $item,
+        );
+    }
+
+    #[Test]
+    public function decode_item_works_with_array(): void
+    {
+        // -- Arrange
+        $item = [
+            'name' => 'John Doe',
+            'users' => [
+                [
+                    'name' => 'Jane Doe',
+                    'hours' => 5,
+                ],
+                [
+                    'name' => 'Richard Roe',
+                    'hours' => null,
+                ],
+                [
+                    'name' => 'Mary Roe',
+                    'hours' => '7.5',
+                ],
+            ],
+        ];
+        $decoderTypes = [
+            'users.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                'name' => 'John Doe',
+                'users' => [
+                    [
+                        'name' => 'Jane Doe',
+                        'hours' => 5.0,
+                    ],
+                    [
+                        'name' => 'Richard Roe',
+                        'hours' => null,
+                    ],
+                    [
+                        'name' => 'Mary Roe',
+                        'hours' => 7.5,
+                    ],
+                ],
+            ],
+            $item,
+        );
+    }
+
+    #[Test]
+    public function decode_item_works_with_nested_arrays(): void
+    {
+        // -- Arrange
+        $item = [
+            'projects' => [
+                [
+                    'name' => 'Project 1',
+                    'timeEntries' => [
+                        [
+                            'hours' => 2,
+                        ],
+                        [
+                            'hours' => null,
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'Project 2',
+                    'timeEntries' => [],
+                ],
+                [
+                    'name' => 'Project 3',
+                    'timeEntries' => [
+                        [
+                            'hours' => 1.5,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $decoderTypes = [
+            'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                'projects' => [
+                    [
+                        'name' => 'Project 1',
+                        'timeEntries' => [
+                            [
+                                'hours' => 2.0,
+                            ],
+                            [
+                                'hours' => null,
+                            ],
+                        ],
+                    ],
+                    [
+                        'name' => 'Project 2',
+                        'timeEntries' => [],
+                    ],
+                    [
+                        'name' => 'Project 3',
+                        'timeEntries' => [
+                            [
+                                'hours' => 1.5,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            $item,
+        );
+    }
+
+    #[Test]
+    public function decode_item_decodes_parent_value_before_nested_values(): void
+    {
+        // -- Arrange
+        $item = [
+            'projects' => '[{"name": "Project 1", "timeEntries": [{"hours": 2}, {"hours": null}]}]',
+        ];
+        // The nested keys are defined before the parent key on purpose.
+        $decoderTypes = [
+            'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+            'projects' => DTO\DecoderType::JSON,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                'projects' => [
+                    [
+                        'name' => 'Project 1',
+                        'timeEntries' => [
+                            [
+                                'hours' => 2.0,
+                            ],
+                            [
+                                'hours' => null,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            $item,
+        );
+    }
+
+    #[Test]
+    public function decode_item_works_with_json_strings_nested_in_json(): void
+    {
+        // -- Arrange
+        $item = [
+            'projects' => '[{"name": "Project 1", "timeEntries": "[{\\"hours\\": 2}]"}, {"name": "Project 2", "timeEntries": null}]',
+        ];
+        $decoderTypes = [
+            'projects' => DTO\DecoderType::JSON,
+            'projects.*.timeEntries' => DTO\DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL,
+            'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                'projects' => [
+                    [
+                        'name' => 'Project 1',
+                        'timeEntries' => [
+                            [
+                                'hours' => 2.0,
+                            ],
+                        ],
+                    ],
+                    [
+                        'name' => 'Project 2',
+                        'timeEntries' => [],
+                    ],
+                ],
+            ],
+            $item,
+        );
+    }
+
+    #[Test]
+    public function decode_item_ignores_null_values_on_the_way_to_the_nested_value(): void
+    {
+        // -- Arrange
+        $item = [
+            'project' => null,
+            'users' => null,
+            'projects' => [
+                null,
+                [
+                    'name' => 'Project 1',
+                    'timeEntries' => null,
+                    'responsible' => null,
+                ],
+                [
+                    'name' => 'Project 2',
+                    'timeEntries' => [
+                        null,
+                        [
+                            'hours' => 2,
+                        ],
+                    ],
+                    'responsible' => [
+                        'hourlyRate' => '85',
+                    ],
+                ],
+            ],
+        ];
+        $decoderTypes = [
+            'project.budget' => DTO\DecoderType::INT,
+            'users.*.hours' => DTO\DecoderType::FLOAT,
+            'projects.*.timeEntries.*.hours' => DTO\DecoderType::FLOAT,
+            'projects.*.responsible.hourlyRate' => DTO\DecoderType::INT,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                'project' => null,
+                'users' => null,
+                'projects' => [
+                    null,
+                    [
+                        'name' => 'Project 1',
+                        'timeEntries' => null,
+                        'responsible' => null,
+                    ],
+                    [
+                        'name' => 'Project 2',
+                        'timeEntries' => [
+                            null,
+                            [
+                                'hours' => 2.0,
+                            ],
+                        ],
+                        'responsible' => [
+                            'hourlyRate' => 85,
+                        ],
+                    ],
+                ],
+            ],
+            $item,
+        );
+    }
+
+    #[Test]
+    public function decode_item_ignores_missing_keys(): void
+    {
+        // -- Arrange
+        $item = [
+            'name' => 'John Doe',
+            'project' => [
+                'name' => 'Project 1',
+            ],
+            'users' => [
+                [
+                    'name' => 'Jane Doe',
+                ],
+                [
+                    'name' => 'Richard Roe',
+                    'hours' => '5',
+                ],
+            ],
+        ];
+        $decoderTypes = [
+            'notExisting' => DTO\DecoderType::INT,
+            'notExisting.budget' => DTO\DecoderType::INT,
+            'project.budget' => DTO\DecoderType::INT,
+            'project.responsible.hourlyRate' => DTO\DecoderType::INT,
+            'users.*.hours' => DTO\DecoderType::FLOAT,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                'name' => 'John Doe',
+                'project' => [
+                    'name' => 'Project 1',
+                ],
+                'users' => [
+                    [
+                        'name' => 'Jane Doe',
+                    ],
+                    [
+                        'name' => 'Richard Roe',
+                        'hours' => 5.0,
+                    ],
+                ],
+            ],
+            $item,
+        );
+    }
+
+    #[Test]
+    public function decode_item_fails_when_level_is_not_an_array(): void
+    {
+        // -- Arrange
+        $item = [
+            'project' => '{"name": "Project 1", "budget": "1500"}',
+        ];
+        $decoderTypes = [
+            'project.budget' => DTO\DecoderType::INT,
+        ];
+
+        // -- Assert
+        $this->expectException(Exception\DecoderTypeKeyLevelIsNotAnArray::class);
+        $this->expectExceptionMessage('The value of level "project" of the decoder type key "project.budget" must be an array or null.');
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+    }
+
+    #[Test]
+    public function decode_item_fails_when_element_of_array_is_not_an_array(): void
+    {
+        // -- Arrange
+        $item = [
+            'users' => [
+                '{"name": "Jane Doe", "hours": "5"}',
+            ],
+        ];
+        $decoderTypes = [
+            'users.*.hours' => DTO\DecoderType::FLOAT,
+        ];
+
+        // -- Assert
+        $this->expectException(Exception\DecoderTypeKeyLevelIsNotAnArray::class);
+        $this->expectExceptionMessage('The value of level "*" of the decoder type key "users.*.hours" must be an array or null.');
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+    }
+
+    #[Test]
+    public function decode_item_fails_when_key_starts_with_array_identifier(): void
+    {
+        // -- Arrange
+        $item = [
+            'hours' => '5',
+        ];
+        $decoderTypes = [
+            '*.hours' => DTO\DecoderType::FLOAT,
+        ];
+
+        // -- Assert
+        $this->expectException(DTO\Exception\ResultTransformationKeyCanNotStartWithAnArrayIdentifier::class);
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+    }
+
+    #[Test]
+    public function decode_item_fails_when_key_ends_with_array_identifier(): void
+    {
+        // -- Arrange
+        $item = [
+            'hours' => ['5'],
+        ];
+        $decoderTypes = [
+            'hours.*' => DTO\DecoderType::FLOAT,
+        ];
+
+        // -- Assert
+        $this->expectException(DTO\Exception\ResultTransformationKeyCanNotEndWithAnArrayIdentifier::class);
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+    }
+
+    #[Test]
+    public function decode_results_works_with_nested_keys(): void
+    {
+        // -- Arrange
+        $results = [
+            [
+                'name' => 'Stark Industries',
+                'projects' => '[{"name": "Project 1", "timeEntries": [{"hours": 2}, {"hours": null}]}]',
+            ],
+            [
+                'name' => 'Wayne Enterprises',
+                'projects' => '[{"name": "Project 2", "timeEntries": [{"hours": "1.5"}]}]',
+            ],
+            [
+                'name' => 'Acme Corporation',
+                'projects' => null,
+            ],
+        ];
+        $decoderTypes = [
+            'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+            'projects' => DTO\DecoderType::NULLABLE_JSON,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeResults(
+            data: $results,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                [
+                    'name' => 'Stark Industries',
+                    'projects' => [
+                        [
+                            'name' => 'Project 1',
+                            'timeEntries' => [
+                                [
+                                    'hours' => 2.0,
+                                ],
+                                [
+                                    'hours' => null,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'Wayne Enterprises',
+                    'projects' => [
+                        [
+                            'name' => 'Project 2',
+                            'timeEntries' => [
+                                [
+                                    'hours' => 1.5,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'Acme Corporation',
+                    'projects' => null,
                 ],
             ],
             $results,
