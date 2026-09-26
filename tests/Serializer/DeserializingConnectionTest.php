@@ -6,7 +6,10 @@ namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
 use DigitalCraftsman\DeserializingConnection\Test\ConnectionTestCase;
 use DigitalCraftsman\DeserializingConnection\Test\DTO\Company;
+use DigitalCraftsman\DeserializingConnection\Test\DTO\CompanyWithProjects;
 use DigitalCraftsman\DeserializingConnection\Test\DTO\Duration;
+use DigitalCraftsman\DeserializingConnection\Test\DTO\ProjectWithTimeEntries;
+use DigitalCraftsman\DeserializingConnection\Test\DTO\TimeEntry;
 use DigitalCraftsman\DeserializingConnection\Test\DTO\User;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\CompanyId;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\ProjectId;
@@ -33,6 +36,7 @@ use Symfony\Component\Serializer\Serializer;
 #[CoversClass(Exception\SingleValueTransformationMustNotContainRenaming::class)]
 #[CoversClass(Exception\IndexMustBeString::class)]
 #[CoversClass(DTO\Exception\ConflictBetweenKeysAndRenameToConfiguration::class)]
+#[CoversClass(Exception\DecoderTypeKeyLevelIsNotAnArray::class)]
 final class DeserializingConnectionTest extends ConnectionTestCase
 {
     private DeserializingConnection $deserializingConnection;
@@ -707,5 +711,409 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         self::assertSame(\Generator::class, $users::class);
         $usersResult = iterator_to_array($users);
         self::assertEquals($expectedUsers, $usersResult);
+    }
+
+    #[Test]
+    public function find_one_works_with_nested_decoder_types(): void
+    {
+        // -- Arrange
+        $expectedResult = new CompanyWithProjects(
+            name: 'Stark Industries',
+            projects: [
+                new ProjectWithTimeEntries(
+                    name: 'Project 1',
+                    timeEntries: [
+                        new TimeEntry(
+                            description: 'Planning',
+                            hours: 2.0,
+                        ),
+                        new TimeEntry(
+                            description: 'Development',
+                            hours: null,
+                        ),
+                    ],
+                ),
+                new ProjectWithTimeEntries(
+                    name: 'Project 2',
+                    timeEntries: [],
+                ),
+                new ProjectWithTimeEntries(
+                    name: 'Project 3',
+                    timeEntries: [
+                        new TimeEntry(
+                            description: 'Planning',
+                            hours: 1.5,
+                        ),
+                    ],
+                ),
+            ],
+        );
+
+        // -- Act
+        $company = $this->deserializingConnection->findOne(
+            sql: <<<'SQL'
+                SELECT
+                    'Stark Industries' AS name,
+                    jsonb_build_array(
+                        jsonb_build_object(
+                            'name', 'Project 1',
+                            'timeEntries', jsonb_build_array(
+                                jsonb_build_object('description', 'Planning', 'hours', 2),
+                                jsonb_build_object('description', 'Development', 'hours', null)
+                            )
+                        ),
+                        jsonb_build_object(
+                            'name', 'Project 2',
+                            'timeEntries', jsonb_build_array()
+                        ),
+                        jsonb_build_object(
+                            'name', 'Project 3',
+                            'timeEntries', jsonb_build_array(
+                                jsonb_build_object('description', 'Planning', 'hours', 1.5)
+                            )
+                        )
+                    ) AS projects
+                WHERE 'Stark Industries' = :name
+                SQL,
+            class: CompanyWithProjects::class,
+            parameters: [
+                'name' => 'Stark Industries',
+            ],
+            decoderTypes: [
+                'projects' => DTO\DecoderType::JSON,
+                'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+            ],
+        );
+
+        // -- Assert
+        self::assertEquals($expectedResult, $company);
+    }
+
+    #[Test]
+    public function find_one_works_with_nested_decoder_types_and_result_transformers(): void
+    {
+        // -- Arrange
+        $expectedResult = new CompanyWithProjects(
+            name: 'Stark Industries',
+            projects: [
+                new ProjectWithTimeEntries(
+                    name: 'Project 1',
+                    timeEntries: [
+                        new TimeEntry(
+                            description: 'Planning',
+                            hours: 4.0,
+                        ),
+                        new TimeEntry(
+                            description: 'Development',
+                            hours: null,
+                        ),
+                    ],
+                ),
+            ],
+        );
+
+        // -- Act
+        $company = $this->deserializingConnection->findOne(
+            sql: <<<'SQL'
+                SELECT
+                    'Stark Industries' AS name,
+                    '[{"name": "Project 1", "timeEntries": [{"description": "Planning", "hours": "2"}, {"description": "Development", "hours": null}]}]' AS projects
+                SQL,
+            class: CompanyWithProjects::class,
+            decoderTypes: [
+                'projects' => DTO\DecoderType::JSON,
+                'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+            ],
+            resultTransformers: [
+                // Is run after the decoding, so the hours is already a float.
+                DTO\ResultTransformer::toTransform(
+                    key: 'projects.*.timeEntries.*.hours',
+                    denormalizeResultToClass: null,
+                    transformer: static fn (?float $hours): ?float => $hours !== null
+                        ? $hours * 2.0
+                        : null,
+                    isTransformedResultNormalized: false,
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertEquals($expectedResult, $company);
+    }
+
+    #[Test]
+    public function find_one_fails_with_nested_decoder_type_on_undecoded_value(): void
+    {
+        // -- Assert
+        $this->expectException(Exception\DecoderTypeKeyLevelIsNotAnArray::class);
+
+        // -- Act
+        $this->deserializingConnection->findOne(
+            sql: <<<'SQL'
+                SELECT
+                    'Stark Industries' AS name,
+                    '[{"name": "Project 1", "timeEntries": [{"description": "Planning", "hours": 2}]}]' AS projects
+                SQL,
+            class: CompanyWithProjects::class,
+            decoderTypes: [
+                'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+            ],
+        );
+    }
+
+    #[Test]
+    public function find_one_fails_with_nested_decoder_type_key_ending_with_array_identifier(): void
+    {
+        // -- Assert
+        $this->expectException(DTO\Exception\ResultTransformationKeyCanNotEndWithAnArrayIdentifier::class);
+
+        // -- Act
+        $this->deserializingConnection->findOne(
+            sql: <<<'SQL'
+                SELECT
+                    'Stark Industries' AS name,
+                    '[]' AS projects
+                SQL,
+            class: CompanyWithProjects::class,
+            decoderTypes: [
+                'projects' => DTO\DecoderType::JSON,
+                'projects.*' => DTO\DecoderType::JSON,
+            ],
+        );
+    }
+
+    #[Test]
+    public function get_one_works_with_nested_decoder_types(): void
+    {
+        // -- Arrange
+        $expectedResult = new CompanyWithProjects(
+            name: 'Stark Industries',
+            projects: [
+                new ProjectWithTimeEntries(
+                    name: 'Project 1',
+                    timeEntries: [
+                        new TimeEntry(
+                            description: 'Planning',
+                            hours: 2.0,
+                        ),
+                        new TimeEntry(
+                            description: 'Development',
+                            hours: null,
+                        ),
+                    ],
+                ),
+                new ProjectWithTimeEntries(
+                    name: 'Project 2',
+                    timeEntries: [],
+                ),
+                new ProjectWithTimeEntries(
+                    name: 'Project 3',
+                    timeEntries: [
+                        new TimeEntry(
+                            description: 'Planning',
+                            hours: 1.5,
+                        ),
+                    ],
+                ),
+            ],
+        );
+
+        // -- Act
+        $company = $this->deserializingConnection->getOne(
+            sql: <<<'SQL'
+                SELECT
+                    'Stark Industries' AS name,
+                    jsonb_build_array(
+                        jsonb_build_object(
+                            'name', 'Project 1',
+                            'timeEntries', jsonb_build_array(
+                                jsonb_build_object('description', 'Planning', 'hours', 2),
+                                jsonb_build_object('description', 'Development', 'hours', null)
+                            )
+                        ),
+                        jsonb_build_object(
+                            'name', 'Project 2',
+                            'timeEntries', jsonb_build_array()
+                        ),
+                        jsonb_build_object(
+                            'name', 'Project 3',
+                            'timeEntries', jsonb_build_array(
+                                jsonb_build_object('description', 'Planning', 'hours', 1.5)
+                            )
+                        )
+                    ) AS projects
+                WHERE 'Stark Industries' = :name
+                SQL,
+            class: CompanyWithProjects::class,
+            parameters: [
+                'name' => 'Stark Industries',
+            ],
+            decoderTypes: [
+                'projects' => DTO\DecoderType::JSON,
+                'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+            ],
+        );
+
+        // -- Assert
+        self::assertEquals($expectedResult, $company);
+    }
+
+    #[Test]
+    public function find_array_works_with_nested_decoder_types(): void
+    {
+        // -- Arrange
+        $expectedResult = [
+            new CompanyWithProjects(
+                name: 'Stark Industries',
+                projects: [
+                    new ProjectWithTimeEntries(
+                        name: 'Project 1',
+                        timeEntries: [
+                            new TimeEntry(
+                                description: 'Planning',
+                                hours: 2.0,
+                            ),
+                            new TimeEntry(
+                                description: 'Development',
+                                hours: null,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            new CompanyWithProjects(
+                name: 'Wayne Enterprises',
+                projects: [
+                    new ProjectWithTimeEntries(
+                        name: 'Project 2',
+                        timeEntries: [],
+                    ),
+                    new ProjectWithTimeEntries(
+                        name: 'Project 3',
+                        timeEntries: [
+                            new TimeEntry(
+                                description: 'Planning',
+                                hours: 1.5,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            new CompanyWithProjects(
+                name: 'Acme Corporation',
+                projects: [],
+            ),
+        ];
+
+        // -- Act
+        $companies = $this->deserializingConnection->findArray(
+            sql: <<<'SQL'
+                SELECT
+                    name,
+                    projects
+                FROM (
+                    VALUES
+                        ('Stark Industries', '[{"name": "Project 1", "timeEntries": [{"description": "Planning", "hours": 2}, {"description": "Development", "hours": null}]}]'::jsonb),
+                        ('Wayne Enterprises', '[{"name": "Project 2", "timeEntries": null}, {"name": "Project 3", "timeEntries": [{"description": "Planning", "hours": 1.5}]}]'::jsonb),
+                        ('Acme Corporation', null)
+                ) AS companies(name, projects)
+                SQL,
+            class: CompanyWithProjects::class,
+            decoderTypes: [
+                'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+                'projects' => DTO\DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL,
+            ],
+            resultTransformers: [
+                DTO\ResultTransformer::toTransform(
+                    key: 'projects.*.timeEntries',
+                    denormalizeResultToClass: null,
+                    transformer: static fn (?array $timeEntries): array => $timeEntries ?? [],
+                    isTransformedResultNormalized: false,
+                ),
+            ],
+        );
+
+        // -- Assert
+        self::assertEquals($expectedResult, $companies);
+    }
+
+    #[Test]
+    public function find_generator_works_with_nested_decoder_types(): void
+    {
+        // -- Arrange
+        $expectedResult = [
+            new CompanyWithProjects(
+                name: 'Stark Industries',
+                projects: [
+                    new ProjectWithTimeEntries(
+                        name: 'Project 1',
+                        timeEntries: [
+                            new TimeEntry(
+                                description: 'Planning',
+                                hours: 2.0,
+                            ),
+                            new TimeEntry(
+                                description: 'Development',
+                                hours: null,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            new CompanyWithProjects(
+                name: 'Wayne Enterprises',
+                projects: [
+                    new ProjectWithTimeEntries(
+                        name: 'Project 2',
+                        timeEntries: [],
+                    ),
+                    new ProjectWithTimeEntries(
+                        name: 'Project 3',
+                        timeEntries: [
+                            new TimeEntry(
+                                description: 'Planning',
+                                hours: 1.5,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            new CompanyWithProjects(
+                name: 'Acme Corporation',
+                projects: [],
+            ),
+        ];
+
+        // -- Act
+        $companies = $this->deserializingConnection->findGenerator(
+            sql: <<<'SQL'
+                SELECT
+                    name,
+                    projects
+                FROM (
+                    VALUES
+                        ('Stark Industries', '[{"name": "Project 1", "timeEntries": [{"description": "Planning", "hours": 2}, {"description": "Development", "hours": null}]}]'::jsonb),
+                        ('Wayne Enterprises', '[{"name": "Project 2", "timeEntries": null}, {"name": "Project 3", "timeEntries": [{"description": "Planning", "hours": 1.5}]}]'::jsonb),
+                        ('Acme Corporation', null)
+                ) AS companies(name, projects)
+                SQL,
+            class: CompanyWithProjects::class,
+            decoderTypes: [
+                'projects.*.timeEntries.*.hours' => DTO\DecoderType::NULLABLE_FLOAT,
+                'projects' => DTO\DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL,
+            ],
+            resultTransformers: [
+                DTO\ResultTransformer::toTransform(
+                    key: 'projects.*.timeEntries',
+                    denormalizeResultToClass: null,
+                    transformer: static fn (?array $timeEntries): array => $timeEntries ?? [],
+                    isTransformedResultNormalized: false,
+                ),
+            ],
+        );
+
+        // -- Assert
+        $companiesResult = iterator_to_array($companies);
+        self::assertEquals($expectedResult, $companiesResult);
     }
 }
