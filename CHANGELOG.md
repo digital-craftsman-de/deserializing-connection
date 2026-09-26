@@ -5,6 +5,7 @@
 - **Breaking change:** Keys of `decoderTypes` must not contain dots (`.`) anymore, except to target nested values. A dot is now interpreted as a separator between levels.
 - Added support for nested keys in `decoderTypes` (e.g. `projects.*.timeEntries.*.hours`) with the same key syntax as the result transformers. Parent values are decoded before nested values, independent of the order of definition.
 - Added `DecoderTypeKeyLevelIsNotAnArray` exception, which is thrown when a level on the way to a nested value is neither an array nor `null` (e.g. when the parent JSON value wasn't decoded).
+- Added optional `otherwiseThrow` parameter to `DeserializingConnection->getOne` and `DeserializingConnection->getOneFromSingleValue` to throw a custom exception instead of `ElementNotFound` when no result is found.
 
 ## 0.7.2
 

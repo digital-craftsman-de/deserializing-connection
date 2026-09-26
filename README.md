@@ -72,6 +72,19 @@ These are the offered methods:
 - `findArray` to return an array of objects.
 - `findGenerator` to return a generator that yields the objects.
 
+By default, `getOne` and `getOneFromSingleValue` throw an `ElementNotFound` exception when no result is found. You can supply a callable through `otherwiseThrow` to throw a custom exception instead:
+
+```php
+$user = $this->deserializingConnection->getOne(
+    sql: ...,
+    class: User::class,
+    parameters: [
+        'userId' => $userId,
+    ],
+    otherwiseThrow: static fn () => new UserNotFound($userId),
+);
+```
+
 You can use `getOneFromSingleValue` when the denormalization step needs a single value instead of an associative array. This could look like this:
 
 ```php
