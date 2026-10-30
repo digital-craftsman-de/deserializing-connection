@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b8517341835a9581cf4c6404b4f8ed1b",
+    "content-hash": "9d1065b25900ffd79a412a0058c311fd",
     "packages": [
         {
             "name": "digital-craftsman/self-aware-normalizers",
