@@ -60,7 +60,7 @@
     {% set failed_traces = collector.traces|filter(trace => trace.exception is not null) %}
     <span class="label {{ collector.traces|length == 0 ? 'disabled' }} {{ failed_traces|length > 0 ? 'label-status-error' }}">
         <span class="icon">{{ _self.icon() }}</span>
-        <strong>Deserializing Connection</strong>
+        <strong>Deserializing Con.</strong>
         {% if failed_traces|length > 0 %}
             <span class="count"><span>{{ failed_traces|length }}</span></span>
         {% endif %}
