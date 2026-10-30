@@ -79,22 +79,24 @@
         .highlight .number    { color: var(--highlight-constant); font-weight: bold; }
         .deserializing-connection-nowrap { white-space: nowrap; }
         .queries-table pre.highlight { word-break: normal; overflow-wrap: anywhere; hyphens: none; -webkit-hyphens: none; }
-        .deserializing-connection-usage { margin-bottom: 8px; font-family: var(--font-family-system); font-size: var(--font-size-body); }
-        .deserializing-connection-usage .text-muted { margin-left: 4px; }
-        .deserializing-connection-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
-        .deserializing-connection-links .btn { margin-left: auto; }
-        .deserializing-connection-stage { margin-top: 8px; }
+        .deserializing-connection-usage { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 8px; font-family: var(--font-family-system); font-size: var(--font-size-body); }
+        .deserializing-connection-usage .btn { margin-left: auto; }
         .deserializing-connection-exception { color: var(--color-error); margin-bottom: 8px; }
-        .deserializing-connection-durations { margin-top: 4px; }
+        table tbody tr.deserializing-connection-step td { border-top: 0; padding-top: 2px; padding-bottom: 2px; }
+        table tbody tr.deserializing-connection-step:last-child td { padding-bottom: 10px; }
+        table tbody.deserializing-connection-usage-rows tr:not(:last-child) td { border-bottom: 0; }
+        .deserializing-connection-step-content { display: flex; gap: 8px; align-items: baseline; margin: 0; }
+        .deserializing-connection-step-label { flex: 0 0 110px; font-family: var(--font-family-system); font-size: var(--font-size-body); color: var(--color-muted); }
+        .deserializing-connection-step-content pre.sf-dump { margin: 0; flex: 1; min-width: 0; }
     </style>
 {% endblock %}
 
 {% block panel %}
     {% set stage_labels = {
-        raw: 'raw result',
-        decoded: 'decoded result',
-        transformed: 'transformed result',
-        denormalized: 'denormalized result',
+        raw: 'Raw result',
+        decoded: 'Decoded',
+        transformed: 'Transformed',
+        denormalized: 'Denormalized',
     } %}
     {% set traces = collector.traces %}
     {% set failed_traces = traces|filter(trace => trace.exception is not null) %}
@@ -137,26 +139,22 @@
                     <th style="width: 100%;">Info</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for trace in traces %}
-                    {% set id = 'deserializing-connection-' ~ loop.index %}
-                    {% set durations = trace.stageDurationsInNanoseconds %}
-                    <tr class="{{ trace.exception is not null ? 'status-error' }}">
+            {% for trace in traces %}
+                {% set durations = trace.stageDurationsInNanoseconds %}
+                {% set status = trace.exception is not null ? 'status-error' : '' %}
+                <tbody class="deserializing-connection-usage-rows">
+                    <tr class="{{ status }}">
                         <td class="deserializing-connection-nowrap">{{ loop.index }}</td>
-                        <td class="deserializing-connection-nowrap">
-                            {{ _self.milliseconds(durations|reduce((sum, duration) => sum + duration, 0)) }}
-                            {% if durations.raw is defined %}
-                                <div class="text-small text-muted deserializing-connection-durations">
-                                    Query: {{ _self.milliseconds(durations.raw) }}
-                                </div>
-                            {% endif %}
-                        </td>
+                        <td class="deserializing-connection-nowrap">{{ _self.milliseconds(durations|reduce((sum, duration) => sum + duration, 0)) }}</td>
                         <td>
                             <div class="deserializing-connection-usage">
                                 <strong>{{ trace.method|split('::')|last }}</strong>
                                 <span class="text-muted">{{ trace.method|split('::')|first|split('\\')|last }}</span>
                                 {% if trace.caller is not null %}
-                                    <span class="text-small">&nbsp;&nbsp;{{ trace.caller.file|format_file(trace.caller.line) }}</span>
+                                    <span class="text-small">{{ trace.caller.file|format_file(trace.caller.line) }}</span>
+                                {% endif %}
+                                {% if trace.runnableSql is not null %}
+                                    <button class="btn btn-sm hidden" data-clipboard-text="{{ trace.runnableSql|e('html_attr') }}">Copy query</button>
                                 {% endif %}
                             </div>
 
@@ -171,41 +169,46 @@
                             {% if trace.runnableSql is null %}
                                 <p class="text-small text-muted">{{ trace.runnableSqlError }} The query is shown with placeholders.</p>
                             {% endif %}
-
-                            <div class="text-small deserializing-connection-links" style="font-family: var(--font-family-system);">
-                                {% for stage, label in stage_labels %}
-                                    {% if trace.stages[stage] is defined %}
-                                        <a href="#" class="sf-toggle link-inverse" data-toggle-selector="#{{ id }}-{{ stage }}" data-toggle-alt-content="Hide {{ label }} ({{ _self.milliseconds(durations[stage] ?? 0)|e }})">View {{ label }} ({{ _self.milliseconds(durations[stage] ?? 0) }})</a>
-                                    {% endif %}
-                                {% endfor %}
-                                <a href="#" class="sf-toggle link-inverse" data-toggle-selector="#{{ id }}-configuration" data-toggle-alt-content="Hide configuration">View configuration</a>
-                                {% if trace.exception is not null %}
-                                    <a href="#" class="sf-toggle link-inverse" data-toggle-selector="#{{ id }}-exception" data-toggle-alt-content="Hide exception">View exception</a>
-                                {% endif %}
-                                {% if trace.runnableSql is not null %}
-                                    <button class="btn btn-sm hidden" data-clipboard-text="{{ trace.runnableSql|e('html_attr') }}">Copy query</button>
-                                {% endif %}
-                            </div>
-
-                            {% for stage, label in stage_labels %}
-                                {% if trace.stages[stage] is defined %}
-                                    <div id="{{ id }}-{{ stage }}" class="hidden deserializing-connection-stage">
-                                        {{ profiler_dump(trace.stages[stage], maxDepth=2) }}
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                            <div id="{{ id }}-configuration" class="hidden deserializing-connection-stage">
-                                {{ profiler_dump(trace.configuration, maxDepth=2) }}
-                            </div>
-                            {% if trace.exception is not null %}
-                                <div id="{{ id }}-exception" class="hidden deserializing-connection-stage">
-                                    {{ profiler_dump(trace.exception, maxDepth=1) }}
-                                </div>
-                            {% endif %}
                         </td>
                     </tr>
-                {% endfor %}
-            </tbody>
+                    {% for stage, label in stage_labels %}
+                        {% if trace.stages[stage] is defined %}
+                            <tr class="deserializing-connection-step {{ status }}">
+                                <td></td>
+                                <td class="deserializing-connection-nowrap">{{ _self.milliseconds(durations[stage] ?? 0) }}</td>
+                                <td>
+                                    <div class="deserializing-connection-step-content">
+                                        <span class="deserializing-connection-step-label">{{ label }}</span>
+                                        {{ profiler_dump(trace.stages[stage], maxDepth=0) }}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    <tr class="deserializing-connection-step {{ status }}">
+                        <td></td>
+                        <td></td>
+                        <td>
+                            <div class="deserializing-connection-step-content">
+                                <span class="deserializing-connection-step-label">Configuration</span>
+                                {{ profiler_dump(trace.configuration, maxDepth=0) }}
+                            </div>
+                        </td>
+                    </tr>
+                    {% if trace.exception is not null %}
+                        <tr class="deserializing-connection-step {{ status }}">
+                            <td></td>
+                            <td></td>
+                            <td>
+                                <div class="deserializing-connection-step-content">
+                                    <span class="deserializing-connection-step-label">Exception</span>
+                                    {{ profiler_dump(trace.exception, maxDepth=0) }}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            {% endfor %}
         </table>
     {% endif %}
 {% endblock %}
