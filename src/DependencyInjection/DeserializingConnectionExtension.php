@@ -22,5 +22,10 @@ final class DeserializingConnectionExtension extends Extension
     {
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yaml');
+
+        /** @var array{profiling: bool} $config */
+        $config = $this->processConfiguration(new Configuration(), $configs);
+
+        $container->setParameter('deserializing_connection.profiling', $config['profiling']);
     }
 }

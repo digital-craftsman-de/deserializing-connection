@@ -24,6 +24,11 @@
         "DigitalCraftsman\\DeserializingConnection\\**\\Exception\\**::__construct"
       ]
     },
+    "LogicalNot": {
+      "ignore": [
+        "DigitalCraftsman\\DeserializingConnection\\Profiler\\RunnableQueryVisitor::acceptOther"
+      ]
+    },
     "FalseValue": {
       "ignore": [
         "DigitalCraftsman\\DeserializingConnection\\Serializer\\DTO\\ResultTransformer::toRename"

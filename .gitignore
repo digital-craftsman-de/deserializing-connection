@@ -18,3 +18,6 @@ coverage.xml
 
 # Claude
 /.claude/settings.local.json
+
+# Docker
+/docker-compose.override.yml

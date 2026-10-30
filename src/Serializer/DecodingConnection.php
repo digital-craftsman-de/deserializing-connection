@@ -4,15 +4,23 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
+use DigitalCraftsman\DeserializingConnection\Profiler\NullTracer;
+use DigitalCraftsman\DeserializingConnection\Profiler\Trace;
+use DigitalCraftsman\DeserializingConnection\Profiler\Tracer;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Types\Type;
 
+/**
+ * The methods which are used by the DeserializingConnection accept an existing trace. When it's supplied, the steps are recorded in this
+ * trace instead of starting a new one.
+ */
 final readonly class DecodingConnection
 {
     public function __construct(
         private Connection $connection,
+        private Tracer $tracer = new NullTracer(),
     ) {
     }
 
@@ -27,21 +35,36 @@ final readonly class DecodingConnection
         array $parameters = [],
         array $parameterTypes = [],
         ?DTO\DecoderType $decoderType = null,
+        ?Trace $trace = null,
     ): mixed {
-        /** @var array<int, mixed> $result */
-        $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+        $trace ??= $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, [
+            'decoderType' => $decoderType,
+        ]);
 
-        if (count($result) === 0) {
-            return null;
+        try {
+            /** @var array<int, mixed> $result */
+            $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+
+            $trace->recordRawResult($result);
+
+            if (count($result) === 0) {
+                return null;
+            }
+
+            $firstResult = $result[0];
+
+            if ($decoderType !== null) {
+                $firstResult = self::decodeValue($firstResult, $decoderType);
+            }
+
+            $trace->recordDecodedResult($firstResult);
+
+            return $firstResult;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
         }
-
-        $firstResult = $result[0];
-
-        if ($decoderType !== null) {
-            return self::decodeValue($firstResult, $decoderType);
-        }
-
-        return $firstResult;
     }
 
     /**
@@ -56,17 +79,32 @@ final readonly class DecodingConnection
         array $parameters = [],
         array $parameterTypes = [],
         array $decoderTypes = [],
+        ?Trace $trace = null,
     ): ?array {
-        /** @var array<string, mixed>|false $result */
-        $result = $this->connection->fetchAssociative($sql, $parameters, $parameterTypes);
+        $trace ??= $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, [
+            'decoderTypes' => $decoderTypes,
+        ]);
 
-        if ($result === false) {
-            return null;
+        try {
+            /** @var array<string, mixed>|false $result */
+            $result = $this->connection->fetchAssociative($sql, $parameters, $parameterTypes);
+
+            $trace->recordRawResult($result);
+
+            if ($result === false) {
+                return null;
+            }
+
+            self::decodeItem($result, $decoderTypes);
+
+            $trace->recordDecodedResult($result);
+
+            return $result;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
         }
-
-        self::decodeItem($result, $decoderTypes);
-
-        return $result;
     }
 
     /**
@@ -80,22 +118,40 @@ final readonly class DecodingConnection
         array $parameterTypes = [],
         array $decoderTypes = [],
         ?string $indexedBy = null,
+        ?Trace $trace = null,
     ): array {
-        /** @var array<int, array<string, mixed>> $result */
-        $result = $this->connection->fetchAllAssociative($sql, $parameters, $parameterTypes);
+        $trace ??= $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, [
+            'decoderTypes' => $decoderTypes,
+            'indexedBy' => $indexedBy,
+        ]);
 
-        self::decodeResults($result, $decoderTypes);
+        try {
+            /** @var array<int, array<string, mixed>> $result */
+            $result = $this->connection->fetchAllAssociative($sql, $parameters, $parameterTypes);
 
-        if ($indexedBy === null) {
-            return $result;
+            $trace->recordRawResult($result);
+
+            self::decodeResults($result, $decoderTypes);
+
+            if ($indexedBy === null) {
+                $trace->recordDecodedResult($result);
+
+                return $result;
+            }
+
+            $resultWithIndex = [];
+            foreach ($result as $row) {
+                $resultWithIndex[$row[$indexedBy]] = $row;
+            }
+
+            $trace->recordDecodedResult($resultWithIndex);
+
+            return $resultWithIndex;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
         }
-
-        $resultWithIndex = [];
-        foreach ($result as $row) {
-            $resultWithIndex[$row[$indexedBy]] = $row;
-        }
-
-        return $resultWithIndex;
     }
 
     /**
@@ -108,16 +164,30 @@ final readonly class DecodingConnection
         array $parameterTypes = [],
         ?DTO\DecoderType $decoderType = null,
     ): array {
-        /** @var array<int, array<string, mixed>> $result */
-        $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+        $trace = $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, [
+            'decoderType' => $decoderType,
+        ]);
 
-        if ($decoderType !== null) {
-            foreach ($result as $key => $value) {
-                $result[$key] = self::decodeValue($value, $decoderType);
+        try {
+            /** @var array<int, array<string, mixed>> $result */
+            $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+
+            $trace->recordRawResult($result);
+
+            if ($decoderType !== null) {
+                foreach ($result as $key => $value) {
+                    $result[$key] = self::decodeValue($value, $decoderType);
+                }
             }
-        }
 
-        return $result;
+            $trace->recordDecodedResult($result);
+
+            return $result;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
+        }
     }
 
     /**
@@ -132,19 +202,29 @@ final readonly class DecodingConnection
         array $parameters = [],
         array $parameterTypes = [],
     ): int {
-        /** @var array<int, mixed> $result */
-        $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+        $trace = $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, []);
 
-        if (count($result) !== 1) {
-            throw new Exception\QueryDidNotReturnExactlyOneResult();
+        try {
+            /** @var array<int, mixed> $result */
+            $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+
+            $trace->recordRawResult($result);
+
+            if (count($result) !== 1) {
+                throw new Exception\QueryDidNotReturnExactlyOneResult();
+            }
+
+            $value = $result[0];
+            if (!is_int($value)) {
+                throw new Exception\QueryDidNotReturnAnInt();
+            }
+
+            return $value;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
         }
-
-        $value = $result[0];
-        if (!is_int($value)) {
-            throw new Exception\QueryDidNotReturnAnInt();
-        }
-
-        return $value;
     }
 
     /**
@@ -159,19 +239,29 @@ final readonly class DecodingConnection
         array $parameters = [],
         array $parameterTypes = [],
     ): bool {
-        /** @var array<int, mixed> $result */
-        $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+        $trace = $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, []);
 
-        if (count($result) !== 1) {
-            throw new Exception\QueryDidNotReturnExactlyOneResult();
+        try {
+            /** @var array<int, mixed> $result */
+            $result = $this->connection->fetchFirstColumn($sql, $parameters, $parameterTypes);
+
+            $trace->recordRawResult($result);
+
+            if (count($result) !== 1) {
+                throw new Exception\QueryDidNotReturnExactlyOneResult();
+            }
+
+            $value = $result[0];
+            if (!is_bool($value)) {
+                throw new Exception\QueryDidNotReturnABoolean();
+            }
+
+            return $value;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
         }
-
-        $value = $result[0];
-        if (!is_bool($value)) {
-            throw new Exception\QueryDidNotReturnABoolean();
-        }
-
-        return $value;
     }
 
     /**

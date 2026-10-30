@@ -1,5 +1,9 @@
 # Upgrade guide
 
+## From 0.8.* to 0.9.0
+
+Nothing to do.
+
 ## From 0.7.* to 0.8.0
 
 ### Breaking change: Keys of `decoderTypes` must not contain dots anymore

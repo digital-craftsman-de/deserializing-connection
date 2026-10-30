@@ -15,3 +15,28 @@ services:
   DigitalCraftsman\DeserializingConnection\Serializer\ResultTransformerRunner:
     autowire: true
     autoconfigure: true
+
+  # Profiler
+  # Replaced with the profiling tracer through the ProfilerPass when the Symfony profiler is available.
+
+  DigitalCraftsman\DeserializingConnection\Profiler\NullTracer: ~
+
+  DigitalCraftsman\DeserializingConnection\Profiler\Tracer:
+    alias: DigitalCraftsman\DeserializingConnection\Profiler\NullTracer
+
+  DigitalCraftsman\DeserializingConnection\Profiler\ProfilingTracer:
+    autowire: true
+    autoconfigure: true
+
+  DigitalCraftsman\DeserializingConnection\Profiler\RunnableQueryRenderer:
+    autowire: true
+    autoconfigure: true
+
+  DigitalCraftsman\DeserializingConnection\Profiler\SqlHighlighter: ~
+
+  DigitalCraftsman\DeserializingConnection\Profiler\DeserializingConnectionDataCollector:
+    autowire: true
+    tags:
+      - name: data_collector
+        id: deserializing_connection
+        template: '@DeserializingConnection/Collector/deserializing_connection.html.twig'

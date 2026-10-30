@@ -4,7 +4,7 @@ A Symfony bundle to get DTOs directly from the database. It's a simple and effic
 
 As it's a central part of an application, it's tested thoroughly (including mutation testing).
 
-[![Latest Stable Version](https://img.shields.io/badge/stable-0.8.0-blue)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
+[![Latest Stable Version](https://img.shields.io/badge/stable-0.9.0-blue)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
 [![PHP Version Require](https://img.shields.io/badge/php-8.4|8.5-5b5d95)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
 [![codecov](https://codecov.io/gh/digital-craftsman-de/deserializing-connection/branch/main/graph/badge.svg?token=BL0JKZYLBG)](https://codecov.io/gh/digital-craftsman-de/deserializing-connection)
 ![Packagist Downloads](https://img.shields.io/packagist/dt/digital-craftsman/deserializing-connection)
@@ -18,7 +18,7 @@ Install package through composer:
 composer require digital-craftsman/deserializing-connection
 ```
 
-> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.8.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
+> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.9.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
 
 ## Usage
 
@@ -211,6 +211,33 @@ For easier normalization, use the [`digital-craftsman/self-aware-normalizers`](h
 ### Doctrine types
 
 For easier doctrine types, use the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package which is required by this package.
+
+### Symfony profiler
+
+When the Symfony profiler is enabled (through `symfony/web-profiler-bundle`), every usage of the `DeserializingConnection` and the `DecodingConnection` is shown in a separate "Deserializing Connection" panel. For every usage it contains:
+
+- The runnable query with all parameters inlined (highlighted like in the Doctrine panel, including a copy button).
+- The raw result, the result after decoding, the result after the result transformers and the denormalized objects, each with the duration of the step.
+- The configuration (class, decoder types, result transformers), the query duration, the location of the usage and a potential exception including the step in which it happened.
+
+The runnable query is rendered with the same parser that Doctrine DBAL uses to expand parameters. Therefore, string literals, comments, casts (`::`), array parameters and escaped question marks (`??` for the JSONB operators of PostgreSQL) are handled the same way as when the query is executed. All values are inlined as string literals, which is how PDO sends parameters to PostgreSQL.
+
+Without the profiler, a null tracer is used, so there is no overhead in production.
+
+Profiling can be disabled (similar to the `profiling` option of the Doctrine DBAL connections), for example when the results are too large:
+
+```php
+// config/packages/deserializing_connection.php
+namespace Symfony\Component\DependencyInjection\Loader\Configurator;
+
+return App::config([
+    'deserializing_connection' => [
+        'profiling' => false,
+    ],
+]);
+```
+
+In this case, the null tracer is used, and the panel isn't shown.
 
 ## Additional documentation
 
