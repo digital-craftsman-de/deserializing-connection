@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Profiler;
 
+use DigitalCraftsman\DeserializingConnection\Serializer\DTO\DecoderType;
 use DigitalCraftsman\DeserializingConnection\Test\ConnectionTestCase;
 use DigitalCraftsman\DeserializingConnection\Test\ValueObject\UserId;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -11,6 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\VarDumper\Cloner\Data;
+use Symfony\Component\VarDumper\Dumper\HtmlDumper;
 
 #[CoversClass(DeserializingConnectionDataCollector::class)]
 final class DeserializingConnectionDataCollectorTest extends ConnectionTestCase
@@ -89,6 +91,46 @@ final class DeserializingConnectionDataCollectorTest extends ConnectionTestCase
         self::assertInstanceOf(Data::class, $failedTraceData['exception']);
         self::assertSame(\RuntimeException::class, $failedTraceData['exceptionClass']);
         self::assertSame('Failed', $failedTraceData['exceptionMessage']);
+    }
+
+    #[Test]
+    public function enums_in_configuration_are_shown_as_written_in_code(): void
+    {
+        // -- Arrange
+        $this->tracer->startTrace(
+            'DeserializingConnection::findOneFromSingleValue',
+            'SELECT 1',
+            [],
+            [],
+            [
+                'class' => UserId::class,
+                'decoderType' => DecoderType::NULLABLE_JSON,
+                'decoderTypes' => [
+                    'tags' => DecoderType::JSON,
+                ],
+            ],
+        );
+
+        // -- Act
+        $this->dataCollector->lateCollect();
+
+        // -- Assert
+        $dumper = new HtmlDumper();
+        $dumper->setDumpHeader('');
+        $dump = (string) $dumper->dump($this->dataCollector->getTraces()[0]['configuration'], true);
+
+        self::assertStringContainsString(
+            sprintf('<span class=sf-dump-str title="64 characters">%s</span>', UserId::class),
+            html_entity_decode($dump),
+        );
+        self::assertStringContainsString(
+            sprintf('<span class=sf-dump-const title="%s::NULLABLE_JSON">DecoderType::NULLABLE_JSON</span>', DecoderType::class),
+            html_entity_decode($dump),
+        );
+        self::assertStringContainsString(
+            sprintf('<span class=sf-dump-const title="%s::JSON">DecoderType::JSON</span>', DecoderType::class),
+            html_entity_decode($dump),
+        );
     }
 
     #[Test]

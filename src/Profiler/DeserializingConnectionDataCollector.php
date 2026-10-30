@@ -8,6 +8,7 @@ use Symfony\Bundle\FrameworkBundle\DataCollector\AbstractDataCollector;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\DataCollector\LateDataCollectorInterface;
+use Symfony\Component\VarDumper\Caster\ConstStub;
 use Symfony\Component\VarDumper\Cloner\Data;
 
 /**
@@ -58,7 +59,7 @@ final class DeserializingConnectionDataCollector extends AbstractDataCollector i
                 'runnableSqlError' => $trace->runnableSqlError,
                 'highlightedSql' => $this->sqlHighlighter->highlight($trace->runnableSql ?? $trace->sql),
                 'caller' => $trace->caller,
-                'configuration' => $this->cloneVar($trace->configuration),
+                'configuration' => $this->cloneVar(self::replaceEnums($trace->configuration)),
                 'stageDurationsInNanoseconds' => $trace->stageDurationsInNanoseconds,
                 'stages' => array_map($this->cloneVar(...), $trace->stages),
                 'exception' => $trace->exception !== null
@@ -71,6 +72,26 @@ final class DeserializingConnectionDataCollector extends AbstractDataCollector i
             ],
             $this->tracer->traces(),
         );
+    }
+
+    /**
+     * Enums (e.g. the decoder types) are shown the same way as they are written in the code (e.g. DecoderType::JSON) instead of as
+     * objects. The fully qualified name is shown as title.
+     */
+    private static function replaceEnums(mixed $value): mixed
+    {
+        if ($value instanceof \UnitEnum) {
+            return new ConstStub(
+                sprintf('%s::%s', new \ReflectionClass($value)->getShortName(), $value->name),
+                sprintf('%s::%s', $value::class, $value->name),
+            );
+        }
+
+        if (is_array($value)) {
+            return array_map(self::replaceEnums(...), $value);
+        }
+
+        return $value;
     }
 
     /**
