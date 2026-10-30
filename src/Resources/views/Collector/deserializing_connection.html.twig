@@ -1,0 +1,175 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% macro icon() %}
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="9" cy="5" rx="6" ry="2.5"/>
+        <path d="M3 5v10c0 1.4 2.7 2.5 6 2.5"/>
+        <path d="M15 5v4"/>
+        <path d="M3 10c0 1.4 2.7 2.5 6 2.5"/>
+        <rect x="13" y="12" width="8" height="9" rx="1"/>
+        <path d="M15 15h4M15 18h4"/>
+    </svg>
+{% endmacro %}
+
+{% block toolbar %}
+    {% set traces = collector.traces %}
+    {% if traces|length > 0 %}
+        {% set failed_traces = traces|filter(trace => trace.exception is not null) %}
+        {% set total_duration = 0 %}
+        {% for trace in traces %}
+            {% set total_duration = total_duration + (trace.queryDurationInNanoseconds ?? 0) %}
+        {% endfor %}
+
+        {% set icon %}
+            {{ _self.icon() }}
+            <span class="sf-toolbar-value">{{ traces|length }}</span>
+            <span class="sf-toolbar-info-piece-additional-detail">
+                <span class="sf-toolbar-label">in</span>
+                <span class="sf-toolbar-value">{{ '%0.2f'|format(total_duration / 1000000) }}</span>
+                <span class="sf-toolbar-label">ms</span>
+            </span>
+        {% endset %}
+
+        {% set text %}
+            <div class="sf-toolbar-info-piece">
+                <b>Usages</b>
+                <span class="sf-toolbar-status">{{ traces|length }}</span>
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Failed usages</b>
+                <span class="sf-toolbar-status {{ failed_traces|length > 0 ? 'sf-toolbar-status-red' }}">{{ failed_traces|length }}</span>
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Query time</b>
+                <span>{{ '%0.2f'|format(total_duration / 1000000) }} ms</span>
+            </div>
+        {% endset %}
+
+        {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', {
+            link: profiler_url,
+            status: failed_traces|length > 0 ? 'red' : '',
+        }) }}
+    {% endif %}
+{% endblock %}
+
+{% block menu %}
+    {% set failed_traces = collector.traces|filter(trace => trace.exception is not null) %}
+    <span class="label {{ collector.traces|length == 0 ? 'disabled' }} {{ failed_traces|length > 0 ? 'label-status-error' }}">
+        <span class="icon">{{ _self.icon() }}</span>
+        <strong>Deserializing Connection</strong>
+        {% if failed_traces|length > 0 %}
+            <span class="count"><span>{{ failed_traces|length }}</span></span>
+        {% endif %}
+    </span>
+{% endblock %}
+
+{% block head %}
+    {{ parent() }}
+    <style>
+        .deserializing-connection-trace { margin-bottom: 2em; }
+        .deserializing-connection-trace h3 { display: flex; gap: .5em; align-items: baseline; flex-wrap: wrap; }
+        .deserializing-connection-trace h3 small { font-weight: normal; color: var(--color-muted); }
+        .deserializing-connection-trace pre.sql { white-space: pre-wrap; word-break: break-word; max-height: 30em; overflow: auto; }
+        .deserializing-connection-trace .sql-header { display: flex; gap: 1em; align-items: center; justify-content: space-between; }
+    </style>
+{% endblock %}
+
+{% block panel %}
+    {% set stage_labels = {
+        raw: 'Raw result',
+        decoded: 'Decoded',
+        transformed: 'Transformed',
+        denormalized: 'Denormalized',
+    } %}
+    {% set traces = collector.traces %}
+    {% set failed_traces = traces|filter(trace => trace.exception is not null) %}
+    {% set total_duration = 0 %}
+    {% for trace in traces %}
+        {% set total_duration = total_duration + (trace.queryDurationInNanoseconds ?? 0) %}
+    {% endfor %}
+
+    <h2>Deserializing Connection</h2>
+
+    <div class="metrics">
+        <div class="metric">
+            <span class="value">{{ traces|length }}</span>
+            <span class="label">Usages</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ failed_traces|length }}</span>
+            <span class="label">Failed usages</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ '%0.2f'|format(total_duration / 1000000) }} <span class="unit">ms</span></span>
+            <span class="label">Query time</span>
+        </div>
+    </div>
+
+    {% if traces|length == 0 %}
+        <div class="empty empty-panel">
+            <p>Neither the DeserializingConnection nor the DecodingConnection were used.</p>
+        </div>
+    {% endif %}
+
+    {% for trace in traces %}
+        {% set method = trace.method|split('\\')|last %}
+        <div class="deserializing-connection-trace">
+            <h3>
+                <span>#{{ loop.index }}</span>
+                <span>{{ method }}</span>
+                {% if trace.queryDurationInNanoseconds is not null %}
+                    <small>{{ '%0.2f'|format(trace.queryDurationInNanoseconds / 1000000) }} ms</small>
+                {% endif %}
+                {% if trace.caller is not null %}
+                    <small>{{ trace.caller.file|format_file(trace.caller.line) }}</small>
+                {% endif %}
+            </h3>
+
+            {% if trace.exception is not null %}
+                <div class="status-error">
+                    <p><strong>{{ trace.exceptionClass }}</strong>: {{ trace.exceptionMessage }}</p>
+                </div>
+            {% endif %}
+
+            <div class="sql-header">
+                <h4>Query</h4>
+                {% if trace.runnableSql is not null %}
+                    <button class="btn btn-sm hidden" data-clipboard-text="{{ trace.runnableSql|e('html_attr') }}">Copy</button>
+                {% endif %}
+            </div>
+            {% if trace.runnableSql is not null %}
+                <pre class="sql">{{ trace.runnableSql }}</pre>
+            {% else %}
+                <p class="text-muted">{{ trace.runnableSqlError }} The query is shown with placeholders.</p>
+                <pre class="sql">{{ trace.sql }}</pre>
+            {% endif %}
+
+            <div class="sf-tabs">
+                {% for stage, label in stage_labels %}
+                    <div class="tab {{ trace.stages[stage] is not defined ? 'disabled' }}">
+                        <h3 class="tab-title">{{ label }}</h3>
+                        <div class="tab-content">
+                            {% if trace.stages[stage] is defined %}
+                                {{ profiler_dump(trace.stages[stage], maxDepth=2) }}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+                <div class="tab">
+                    <h3 class="tab-title">Configuration</h3>
+                    <div class="tab-content">
+                        {{ profiler_dump(trace.configuration, maxDepth=2) }}
+                    </div>
+                </div>
+                {% if trace.exception is not null %}
+                    <div class="tab">
+                        <h3 class="tab-title">Exception</h3>
+                        <div class="tab-content">
+                            {{ profiler_dump(trace.exception, maxDepth=1) }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

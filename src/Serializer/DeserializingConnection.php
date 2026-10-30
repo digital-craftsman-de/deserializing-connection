@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace DigitalCraftsman\DeserializingConnection\Serializer;
 
+use DigitalCraftsman\DeserializingConnection\Profiler\NullTracer;
+use DigitalCraftsman\DeserializingConnection\Profiler\Tracer;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Types\Type;
@@ -14,6 +16,7 @@ final readonly class DeserializingConnection
         private DecodingConnection $decodingConnection,
         private TypedDenormalizer $typedDenormalizer,
         private ResultTransformerRunner $resultTransformerRunner,
+        private Tracer $tracer = new NullTracer(),
     ) {
     }
 
@@ -43,25 +46,44 @@ final readonly class DeserializingConnection
         array $decoderTypes = [],
         array $resultTransformers = [],
     ): ?object {
-        $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
+        $trace = $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, [
+            'class' => $class,
+            'decoderTypes' => $decoderTypes,
+            'resultTransformers' => $resultTransformers,
+        ]);
 
-        $result = $this->decodingConnection->fetchAssociative(
-            $sql,
-            $parameters,
-            $parameterTypes,
-            $decoderTypes,
-        );
+        try {
+            $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
 
-        if ($result === null) {
-            return null;
+            $result = $this->decodingConnection->fetchAssociative(
+                $sql,
+                $parameters,
+                $parameterTypes,
+                $decoderTypes,
+                trace: $trace,
+            );
+
+            if ($result === null) {
+                return null;
+            }
+
+            $this->resultTransformerRunner->runTransformations(
+                result: $result,
+                resultTransformers: $resultTransformerDTOs,
+            );
+
+            $trace->recordTransformedResult($result);
+
+            $denormalizedResult = $this->typedDenormalizer->denormalize($result, $class);
+
+            $trace->recordDenormalizedResult($denormalizedResult);
+
+            return $denormalizedResult;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
         }
-
-        $this->resultTransformerRunner->runTransformations(
-            result: $result,
-            resultTransformers: $resultTransformerDTOs,
-        );
-
-        return $this->typedDenormalizer->denormalize($result, $class);
     }
 
     /**
@@ -95,27 +117,46 @@ final readonly class DeserializingConnection
         array $resultTransformers = [],
         ?callable $otherwiseThrow = null,
     ): ?object {
-        $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
+        $trace = $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, [
+            'class' => $class,
+            'decoderTypes' => $decoderTypes,
+            'resultTransformers' => $resultTransformers,
+        ]);
 
-        $result = $this->decodingConnection->fetchAssociative(
-            $sql,
-            $parameters,
-            $parameterTypes,
-            $decoderTypes,
-        );
+        try {
+            $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
 
-        if ($result === null) {
-            throw $otherwiseThrow !== null
-                ? $otherwiseThrow()
-                : new Exception\ElementNotFound();
+            $result = $this->decodingConnection->fetchAssociative(
+                $sql,
+                $parameters,
+                $parameterTypes,
+                $decoderTypes,
+                trace: $trace,
+            );
+
+            if ($result === null) {
+                throw $otherwiseThrow !== null
+                    ? $otherwiseThrow()
+                    : new Exception\ElementNotFound();
+            }
+
+            $this->resultTransformerRunner->runTransformations(
+                result: $result,
+                resultTransformers: $resultTransformerDTOs,
+            );
+
+            $trace->recordTransformedResult($result);
+
+            $denormalizedResult = $this->typedDenormalizer->denormalize($result, $class);
+
+            $trace->recordDenormalizedResult($denormalizedResult);
+
+            return $denormalizedResult;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
         }
-
-        $this->resultTransformerRunner->runTransformations(
-            result: $result,
-            resultTransformers: $resultTransformerDTOs,
-        );
-
-        return $this->typedDenormalizer->denormalize($result, $class);
     }
 
     /**
@@ -142,33 +183,52 @@ final readonly class DeserializingConnection
         ?DTO\DecoderType $decoderType = null,
         ?DTO\ResultTransformer $resultTransformer = null,
     ): ?object {
-        if ($resultTransformer !== null
-            && $resultTransformer->renameTo !== null
-        ) {
-            throw new Exception\SingleValueTransformationMustNotContainRenaming();
-        }
+        $trace = $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, [
+            'class' => $class,
+            'decoderType' => $decoderType,
+            'resultTransformer' => $resultTransformer,
+        ]);
 
-        $result = $this->decodingConnection->fetchOne(
-            $sql,
-            $parameters,
-            $parameterTypes,
-            $decoderType,
-        );
+        try {
+            if ($resultTransformer !== null
+                && $resultTransformer->renameTo !== null
+            ) {
+                throw new Exception\SingleValueTransformationMustNotContainRenaming();
+            }
 
-        if ($result === null) {
-            return null;
-        }
-
-        if ($resultTransformer !== null) {
-            $result = $this->resultTransformerRunner->transformItem(
-                transformer: $resultTransformer,
-                item: $result,
-                result: $result,
-                resultOfLevel: $result,
+            $result = $this->decodingConnection->fetchOne(
+                $sql,
+                $parameters,
+                $parameterTypes,
+                $decoderType,
+                trace: $trace,
             );
-        }
 
-        return $this->typedDenormalizer->denormalize($result, $class);
+            if ($result === null) {
+                return null;
+            }
+
+            if ($resultTransformer !== null) {
+                $result = $this->resultTransformerRunner->transformItem(
+                    transformer: $resultTransformer,
+                    item: $result,
+                    result: $result,
+                    resultOfLevel: $result,
+                );
+            }
+
+            $trace->recordTransformedResult($result);
+
+            $denormalizedResult = $this->typedDenormalizer->denormalize($result, $class);
+
+            $trace->recordDenormalizedResult($denormalizedResult);
+
+            return $denormalizedResult;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
+        }
     }
 
     /**
@@ -200,35 +260,54 @@ final readonly class DeserializingConnection
         ?DTO\ResultTransformer $resultTransformer = null,
         ?callable $otherwiseThrow = null,
     ): object {
-        if ($resultTransformer !== null
-            && $resultTransformer->renameTo !== null
-        ) {
-            throw new Exception\SingleValueTransformationMustNotContainRenaming();
-        }
+        $trace = $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, [
+            'class' => $class,
+            'decoderType' => $decoderType,
+            'resultTransformer' => $resultTransformer,
+        ]);
 
-        $result = $this->decodingConnection->fetchOne(
-            $sql,
-            $parameters,
-            $parameterTypes,
-            $decoderType,
-        );
+        try {
+            if ($resultTransformer !== null
+                && $resultTransformer->renameTo !== null
+            ) {
+                throw new Exception\SingleValueTransformationMustNotContainRenaming();
+            }
 
-        if ($result === null) {
-            throw $otherwiseThrow !== null
-                ? $otherwiseThrow()
-                : new Exception\ElementNotFound();
-        }
-
-        if ($resultTransformer !== null) {
-            $result = $this->resultTransformerRunner->transformItem(
-                transformer: $resultTransformer,
-                item: $result,
-                result: $result,
-                resultOfLevel: $result,
+            $result = $this->decodingConnection->fetchOne(
+                $sql,
+                $parameters,
+                $parameterTypes,
+                $decoderType,
+                trace: $trace,
             );
-        }
 
-        return $this->typedDenormalizer->denormalize($result, $class);
+            if ($result === null) {
+                throw $otherwiseThrow !== null
+                    ? $otherwiseThrow()
+                    : new Exception\ElementNotFound();
+            }
+
+            if ($resultTransformer !== null) {
+                $result = $this->resultTransformerRunner->transformItem(
+                    transformer: $resultTransformer,
+                    item: $result,
+                    result: $result,
+                    resultOfLevel: $result,
+                );
+            }
+
+            $trace->recordTransformedResult($result);
+
+            $denormalizedResult = $this->typedDenormalizer->denormalize($result, $class);
+
+            $trace->recordDenormalizedResult($denormalizedResult);
+
+            return $denormalizedResult;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
+        }
     }
 
     /**
@@ -254,45 +333,68 @@ final readonly class DeserializingConnection
         array $resultTransformers = [],
         ?\Closure $indexedBy = null,
     ): array {
-        $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
+        $trace = $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, [
+            'class' => $class,
+            'decoderTypes' => $decoderTypes,
+            'resultTransformers' => $resultTransformers,
+        ]);
 
-        $result = $this->decodingConnection->fetchAllAssociative(
-            $sql,
-            $parameters,
-            $parameterTypes,
-            $decoderTypes,
-        );
+        try {
+            $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
 
-        foreach ($result as &$resultItem) {
-            $this->resultTransformerRunner->runTransformations(
-                result: $resultItem,
-                resultTransformers: $resultTransformerDTOs,
+            $result = $this->decodingConnection->fetchAllAssociative(
+                $sql,
+                $parameters,
+                $parameterTypes,
+                $decoderTypes,
+                trace: $trace,
             );
-        }
 
-        $denormalizedResult = $this->typedDenormalizer->denormalizeArray($result, $class);
+            foreach ($result as &$resultItem) {
+                $this->resultTransformerRunner->runTransformations(
+                    result: $resultItem,
+                    resultTransformers: $resultTransformerDTOs,
+                );
+            }
+            unset($resultItem);
 
-        if ($indexedBy === null) {
-            return $denormalizedResult;
-        }
+            $trace->recordTransformedResult($result);
 
-        $indexedResult = [];
-        foreach ($denormalizedResult as $item) {
-            $index = $indexedBy($item);
-            /**
-             * @psalm-suppress TypeDoesNotContainType Validation against missing compliance with Psalm.
-             */
-            if (!is_string($index)) {
-                throw new Exception\IndexMustBeString();
+            $denormalizedResult = $this->typedDenormalizer->denormalizeArray($result, $class);
+
+            if ($indexedBy === null) {
+                $trace->recordDenormalizedResult($denormalizedResult);
+
+                return $denormalizedResult;
             }
 
-            $indexedResult[$index] = $item;
-        }
+            $indexedResult = [];
+            foreach ($denormalizedResult as $item) {
+                $index = $indexedBy($item);
+                /**
+                 * @psalm-suppress TypeDoesNotContainType Validation against missing compliance with Psalm.
+                 */
+                if (!is_string($index)) {
+                    throw new Exception\IndexMustBeString();
+                }
 
-        return $indexedResult;
+                $indexedResult[$index] = $item;
+            }
+
+            $trace->recordDenormalizedResult($indexedResult);
+
+            return $indexedResult;
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
+        }
     }
 
     /**
+     * The trace is started when the generator is started. The denormalized items are added to the trace one after another while the
+     * generator is consumed.
+     *
      * @template T of object
      *
      * @param non-empty-string                                                        $sql
@@ -312,26 +414,46 @@ final readonly class DeserializingConnection
         array $decoderTypes = [],
         array $resultTransformers = [],
     ): \Generator {
-        $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
+        $trace = $this->tracer->startTrace(__METHOD__, $sql, $parameters, $parameterTypes, [
+            'class' => $class,
+            'decoderTypes' => $decoderTypes,
+            'resultTransformers' => $resultTransformers,
+        ]);
 
-        /** @var list<array> $result */
-        $result = $this->decodingConnection->fetchAllAssociative(
-            $sql,
-            $parameters,
-            $parameterTypes,
-            $decoderTypes,
-        );
+        try {
+            $resultTransformerDTOs = new DTO\ResultTransformers($resultTransformers);
 
-        foreach ($result as &$resultItem) {
-            $this->resultTransformerRunner->runTransformations(
-                result: $resultItem,
-                resultTransformers: $resultTransformerDTOs,
+            /** @var list<array> $result */
+            $result = $this->decodingConnection->fetchAllAssociative(
+                $sql,
+                $parameters,
+                $parameterTypes,
+                $decoderTypes,
+                trace: $trace,
             );
-        }
 
-        foreach ($result as $item) {
-            /** @var T */
-            yield $this->typedDenormalizer->denormalize($item, $class);
+            foreach ($result as &$resultItem) {
+                $this->resultTransformerRunner->runTransformations(
+                    result: $resultItem,
+                    resultTransformers: $resultTransformerDTOs,
+                );
+            }
+            unset($resultItem);
+
+            $trace->recordTransformedResult($result);
+
+            foreach ($result as $item) {
+                /** @var T $denormalizedItem */
+                $denormalizedItem = $this->typedDenormalizer->denormalize($item, $class);
+
+                $trace->addDenormalizedItem($denormalizedItem);
+
+                yield $denormalizedItem;
+            }
+        } catch (\Throwable $exception) {
+            $trace->recordException($exception);
+
+            throw $exception;
         }
     }
 }

@@ -212,6 +212,18 @@ For easier normalization, use the [`digital-craftsman/self-aware-normalizers`](h
 
 For easier doctrine types, use the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package which is required by this package.
 
+### Symfony profiler
+
+When the Symfony profiler is enabled (through `symfony/web-profiler-bundle`), every usage of the `DeserializingConnection` and the `DecodingConnection` is shown in a separate "Deserializing Connection" panel. For every usage it contains:
+
+- The runnable query with all parameters inlined (including a copy button).
+- The raw result, the result after decoding, the result after the result transformers and the denormalized objects.
+- The configuration (class, decoder types, result transformers), the query duration, the location of the usage and a potential exception including the step in which it happened.
+
+The runnable query is rendered with the same parser that Doctrine DBAL uses to expand parameters. Therefore, string literals, comments, casts (`::`), array parameters and escaped question marks (`??` for the JSONB operators of PostgreSQL) are handled the same way as when the query is executed. All values are inlined as string literals, which is how PDO sends parameters to PostgreSQL.
+
+Without the profiler, a null tracer is used, so there is no overhead in production.
+
 ## Additional documentation
 
 - [Changelog](./CHANGELOG.md)
