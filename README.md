@@ -226,11 +226,17 @@ Without the profiler, a null tracer is used, so there is no overhead in producti
 
 Profiling can be disabled (similar to the `profiling` option of the Doctrine DBAL connections), for example when the results are too large:
 
-```yaml
-# config/packages/deserializing_connection.yaml
-when@dev:
-  deserializing_connection:
-    profiling: false
+```php
+// config/packages/deserializing_connection.php
+namespace Symfony\Component\DependencyInjection\Loader\Configurator;
+
+return App::config([
+    'when@dev' => [
+        'deserializing_connection' => [
+            'profiling' => false,
+        ],
+    ],
+]);
 ```
 
 In this case, the null tracer is used, and the panel isn't shown.
