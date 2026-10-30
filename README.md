@@ -231,10 +231,8 @@ Profiling can be disabled (similar to the `profiling` option of the Doctrine DBA
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 return App::config([
-    'when@dev' => [
-        'deserializing_connection' => [
-            'profiling' => false,
-        ],
+    'deserializing_connection' => [
+        'profiling' => false,
     ],
 ]);
 ```
