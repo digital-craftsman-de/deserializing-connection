@@ -41,6 +41,7 @@ final class NullTracerTest extends TestCase
         $trace->recordDecodedResult(['id' => 5]);
         $trace->recordTransformedResult(['id' => 5]);
         $trace->recordDenormalizedResult(UserId::generateRandom());
+        $trace->startItemDenormalization();
         $trace->addDenormalizedItem(UserId::generateRandom());
         $trace->recordException(new \RuntimeException('Failed'));
 

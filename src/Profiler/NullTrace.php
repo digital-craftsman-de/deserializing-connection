@@ -27,6 +27,11 @@ final readonly class NullTrace implements Trace
     }
 
     #[\Override]
+    public function startItemDenormalization(): void
+    {
+    }
+
+    #[\Override]
     public function addDenormalizedItem(object $denormalizedItem): void
     {
     }

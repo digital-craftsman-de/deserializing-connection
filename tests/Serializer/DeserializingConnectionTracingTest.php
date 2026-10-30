@@ -337,6 +337,29 @@ final class DeserializingConnectionTracingTest extends ConnectionTestCase
     }
 
     /**
+     * The time in which the generator is paused must not be part of the denormalization duration.
+     */
+    #[Test]
+    public function find_generator_measures_only_denormalization_of_items(): void
+    {
+        // -- Act
+        $companies = $this->deserializingConnection->findGenerator(
+            sql: self::COMPANIES_SQL,
+            class: Company::class,
+            parameters: [
+                'pattern' => '%',
+            ],
+        );
+        foreach ($companies as $company) {
+            usleep(20_000);
+        }
+
+        // -- Assert
+        $trace = $this->onlyTrace();
+        self::assertLessThan(20_000_000, $trace->stageDurationsInNanoseconds[ProfilingTrace::STAGE_DENORMALIZED]);
+    }
+
+    /**
      * @param \Closure(DeserializingConnection): mixed $usage
      * @param class-string<\Throwable>                 $expectedException
      */

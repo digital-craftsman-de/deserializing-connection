@@ -24,7 +24,7 @@ final class DeserializingConnectionDataCollectorTest extends ConnectionTestCase
         parent::setUp();
 
         $this->tracer = new ProfilingTracer(new RunnableQueryRenderer($this->connection));
-        $this->dataCollector = new DeserializingConnectionDataCollector($this->tracer);
+        $this->dataCollector = new DeserializingConnectionDataCollector($this->tracer, new SqlHighlighter());
     }
 
     #[Test]
@@ -65,9 +65,13 @@ final class DeserializingConnectionDataCollectorTest extends ConnectionTestCase
         self::assertSame('SELECT :id AS id', $successfulTraceData['sql']);
         self::assertSame(sprintf("SELECT '%s' AS id", (string) $userId), $successfulTraceData['runnableSql']);
         self::assertNull($successfulTraceData['runnableSqlError']);
+        self::assertSame(
+            new SqlHighlighter()->highlight(sprintf("SELECT '%s' AS id", (string) $userId)),
+            $successfulTraceData['highlightedSql'],
+        );
         self::assertNull($successfulTraceData['caller']);
         self::assertSame(['class' => UserId::class], $successfulTraceData['configuration']->getValue(true));
-        self::assertSame($successfulTrace->queryDurationInNanoseconds, $successfulTraceData['queryDurationInNanoseconds']);
+        self::assertSame($successfulTrace->stageDurationsInNanoseconds, $successfulTraceData['stageDurationsInNanoseconds']);
         self::assertSame([ProfilingTrace::STAGE_RAW, ProfilingTrace::STAGE_DENORMALIZED], array_keys($successfulTraceData['stages']));
         self::assertSame(['id' => (string) $userId], $successfulTraceData['stages'][ProfilingTrace::STAGE_RAW]->getValue(true));
         self::assertInstanceOf(Data::class, $successfulTraceData['stages'][ProfilingTrace::STAGE_DENORMALIZED]);
@@ -79,7 +83,8 @@ final class DeserializingConnectionDataCollectorTest extends ConnectionTestCase
         self::assertSame('DecodingConnection::fetchInt', $failedTraceData['method']);
         self::assertNull($failedTraceData['runnableSql']);
         self::assertSame('The runnable query could not be rendered: Named parameter "id" is missing', $failedTraceData['runnableSqlError']);
-        self::assertNull($failedTraceData['queryDurationInNanoseconds']);
+        self::assertSame(new SqlHighlighter()->highlight('SELECT :id AS id'), $failedTraceData['highlightedSql']);
+        self::assertSame([], $failedTraceData['stageDurationsInNanoseconds']);
         self::assertSame([], $failedTraceData['stages']);
         self::assertInstanceOf(Data::class, $failedTraceData['exception']);
         self::assertSame(\RuntimeException::class, $failedTraceData['exceptionClass']);

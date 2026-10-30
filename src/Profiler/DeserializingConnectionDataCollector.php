@@ -11,16 +11,18 @@ use Symfony\Component\HttpKernel\DataCollector\LateDataCollectorInterface;
 use Symfony\Component\VarDumper\Cloner\Data;
 
 /**
- * The traces are collected late, so that usages after the response was created (e.g. in streamed responses) are included as well.
+ * The traces are collected late, so that usages after the response was created (e.g. in streamed responses) are included as well. The
+ * query is highlighted when collecting, as the highlighting is done in PHP.
  *
  * @psalm-type TraceData = array{
  *   method: string,
  *   sql: string,
  *   runnableSql: string|null,
  *   runnableSqlError: string|null,
+ *   highlightedSql: string,
  *   caller: array{file: string, line: int}|null,
  *   configuration: Data,
- *   queryDurationInNanoseconds: int|null,
+ *   stageDurationsInNanoseconds: array<string, int>,
  *   stages: array<string, Data>,
  *   exception: Data|null,
  *   exceptionClass: string|null,
@@ -33,6 +35,7 @@ final class DeserializingConnectionDataCollector extends AbstractDataCollector i
 
     public function __construct(
         private readonly ProfilingTracer $tracer,
+        private readonly SqlHighlighter $sqlHighlighter,
     ) {
     }
 
@@ -53,9 +56,10 @@ final class DeserializingConnectionDataCollector extends AbstractDataCollector i
                 'sql' => $trace->sql,
                 'runnableSql' => $trace->runnableSql,
                 'runnableSqlError' => $trace->runnableSqlError,
+                'highlightedSql' => $this->sqlHighlighter->highlight($trace->runnableSql ?? $trace->sql),
                 'caller' => $trace->caller,
                 'configuration' => $this->cloneVar($trace->configuration),
-                'queryDurationInNanoseconds' => $trace->queryDurationInNanoseconds,
+                'stageDurationsInNanoseconds' => $trace->stageDurationsInNanoseconds,
                 'stages' => array_map($this->cloneVar(...), $trace->stages),
                 'exception' => $trace->exception !== null
                     ? $this->cloneVar($trace->exception)

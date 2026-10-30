@@ -443,6 +443,8 @@ final readonly class DeserializingConnection
             $trace->recordTransformedResult($result);
 
             foreach ($result as $item) {
+                $trace->startItemDenormalization();
+
                 /** @var T $denormalizedItem */
                 $denormalizedItem = $this->typedDenormalizer->denormalize($item, $class);
 

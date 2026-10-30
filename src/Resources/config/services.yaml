@@ -32,6 +32,8 @@ services:
     autowire: true
     autoconfigure: true
 
+  DigitalCraftsman\DeserializingConnection\Profiler\SqlHighlighter: ~
+
   DigitalCraftsman\DeserializingConnection\Profiler\DeserializingConnectionDataCollector:
     autowire: true
     tags:
