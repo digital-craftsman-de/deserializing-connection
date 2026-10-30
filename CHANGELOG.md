@@ -3,6 +3,7 @@
 ## 0.9.0
 
 - Added a Symfony profiler panel showing every usage of the `DeserializingConnection` and `DecodingConnection` with the runnable query, the raw, decoded, transformed and denormalized result, the configuration, the query duration, the location of the usage and a potential exception. The duration is measured for every step (query, decoding, result transformation and denormalization).
+- Added `deserializing_connection.profiling` config option (defaults to `true`) to disable profiling and with it the profiler panel.
 - Added `doctrine/sql-formatter` as dependency to highlight the query in the profiler panel.
 - Added optional `Tracer` constructor parameter to `DeserializingConnection` and `DecodingConnection` (defaults to `NullTracer`).
 - Added optional `trace` parameter to `DecodingConnection->fetchOne`, `DecodingConnection->fetchAssociative` and `DecodingConnection->fetchAllAssociative`. It's only meant to be used by the `DeserializingConnection`.

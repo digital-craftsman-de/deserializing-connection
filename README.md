@@ -224,6 +224,17 @@ The runnable query is rendered with the same parser that Doctrine DBAL uses to e
 
 Without the profiler, a null tracer is used, so there is no overhead in production.
 
+Profiling can be disabled (similar to the `profiling` option of the Doctrine DBAL connections), for example when the results are too large:
+
+```yaml
+# config/packages/deserializing_connection.yaml
+when@dev:
+  deserializing_connection:
+    profiling: false
+```
+
+In this case, the null tracer is used, and the panel isn't shown.
+
 ## Additional documentation
 
 - [Changelog](./CHANGELOG.md)

@@ -45,9 +45,26 @@ final class ProfilerPassTest extends TestCase
         self::assertFalse($container->hasDefinition(DeserializingConnectionDataCollector::class));
     }
 
+    #[Test]
+    public function null_tracer_is_used_when_profiling_is_disabled(): void
+    {
+        // -- Arrange
+        $container = self::containerBuilder();
+        $container->register('profiler');
+        $container->setParameter('deserializing_connection.profiling', false);
+
+        // -- Act
+        new ProfilerPass()->process($container);
+
+        // -- Assert
+        self::assertSame(NullTracer::class, (string) $container->getAlias(Tracer::class));
+        self::assertFalse($container->hasDefinition(DeserializingConnectionDataCollector::class));
+    }
+
     private static function containerBuilder(): ContainerBuilder
     {
         $container = new ContainerBuilder();
+        $container->setParameter('deserializing_connection.profiling', true);
         $container->register(NullTracer::class);
         $container->register(ProfilingTracer::class);
         $container->register(DeserializingConnectionDataCollector::class);
