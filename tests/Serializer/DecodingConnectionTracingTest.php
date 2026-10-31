@@ -33,7 +33,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_one_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchOne(
+        (void) $this->decodingConnection->fetchOne(
             sql: 'SELECT :value',
             parameters: [
                 'value' => '15',
@@ -58,7 +58,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_one_without_decoder_type_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchOne('SELECT 15');
+        (void) $this->decodingConnection->fetchOne('SELECT 15');
 
         // -- Assert
         $trace = $this->onlyTrace();
@@ -72,7 +72,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_one_without_result_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchOne('SELECT 1 WHERE false');
+        (void) $this->decodingConnection->fetchOne('SELECT 1 WHERE false');
 
         // -- Assert
         $trace = $this->onlyTrace();
@@ -85,7 +85,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_associative_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchAssociative(
+        (void) $this->decodingConnection->fetchAssociative(
             sql: <<<'SQL'
                 SELECT '[1, 2]' AS ids
                 SQL,
@@ -108,7 +108,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_associative_without_result_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchAssociative('SELECT 1 WHERE false');
+        (void) $this->decodingConnection->fetchAssociative('SELECT 1 WHERE false');
 
         // -- Assert
         $trace = $this->onlyTrace();
@@ -121,7 +121,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_all_associative_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchAllAssociative(
+        (void) $this->decodingConnection->fetchAllAssociative(
             sql: <<<'SQL'
                 SELECT *
                 FROM (VALUES ('a', '[1]'), ('b', '[2]')) AS t(key, ids)
@@ -154,7 +154,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_all_associative_with_index_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchAllAssociative(
+        (void) $this->decodingConnection->fetchAllAssociative(
             sql: <<<'SQL'
                 SELECT *
                 FROM (VALUES ('a', '[1]'), ('b', '[2]')) AS t(key, ids)
@@ -187,7 +187,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_first_column_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchFirstColumn(
+        (void) $this->decodingConnection->fetchFirstColumn(
             sql: <<<'SQL'
                 SELECT *
                 FROM (VALUES ('1'), ('2')) AS t(number)
@@ -209,7 +209,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_first_column_without_decoder_type_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchFirstColumn(
+        (void) $this->decodingConnection->fetchFirstColumn(
             sql: <<<'SQL'
                 SELECT *
                 FROM (VALUES ('1'), ('2')) AS t(number)
@@ -228,7 +228,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_int_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchInt('SELECT 5');
+        (void) $this->decodingConnection->fetchInt('SELECT 5');
 
         // -- Assert
         $trace = $this->onlyTrace();
@@ -243,7 +243,7 @@ final class DecodingConnectionTracingTest extends ConnectionTestCase
     public function fetch_bool_is_traced(): void
     {
         // -- Act
-        $this->decodingConnection->fetchBool('SELECT true');
+        (void) $this->decodingConnection->fetchBool('SELECT true');
 
         // -- Assert
         $trace = $this->onlyTrace();

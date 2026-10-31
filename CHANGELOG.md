@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0
+
+- First stable release. From now on, the bundle follows semantic versioning and breaking changes are only introduced in major versions.
+- Added support for PHP 8.6.
+- Dropped support for PHP 8.4.
+- Updated `digital-craftsman/self-aware-normalizers` to `^1.4.0` (required for PHP 8.6).
+- Updated `doctrine/dbal` to `^4.5`.
+- Added `#[\NoDiscard]` to all methods of the `DeserializingConnection` (`getOne`, `findOne`, `getOneFromSingleValue`, `findOneFromSingleValue`, `findArray`, `findGenerator`) and all `fetch*` methods of the `DecodingConnection`. PHP emits a warning when the result isn't used. This is especially relevant for `findGenerator`, as the query is only executed when the generator is consumed.
+- Improved README with a clearer description of the value of the bundle and documentation of all options.
+
 ## 0.9.0
 
 - Added a Symfony profiler panel showing every usage of the `DeserializingConnection` and `DecodingConnection` with the runnable query, the raw, decoded, transformed and denormalized result, the configuration, the query duration, the location of the usage and a potential exception. The duration is measured for every step (query, decoding, result transformation and denormalization).

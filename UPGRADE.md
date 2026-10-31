@@ -1,5 +1,21 @@
 # Upgrade guide
 
+## From 0.9.* to 1.0.0
+
+### Dropped support for PHP 8.4
+
+Update to at least PHP 8.5.
+
+### Results of read methods must be used
+
+All methods of the `DeserializingConnection` (`getOne`, `findOne`, `getOneFromSingleValue`, `findOneFromSingleValue`, `findArray`, `findGenerator`) and all `fetch*` methods of the `DecodingConnection` are marked with `#[\NoDiscard]`. When the result of such a call isn't used, PHP emits a warning (which is converted into an exception by the Symfony error handler in debug mode).
+
+If you've used `getOne` or `getOneFromSingleValue` only to check whether a row exists, use `DecodingConnection->fetchBool` with an `EXISTS` query instead. Otherwise use the result or – when you really don't need it – cast the call to `(void)`:
+
+```php
+(void) $this->deserializingConnection->findOne(...);
+```
+
 ## From 0.8.* to 0.9.0
 
 Nothing to do.

@@ -8,13 +8,13 @@ PHP Symfony Bundle (`digital-craftsman/deserializing-connection`) that provides 
 
 ## Development Environment
 
-Docker-based setup with PostgreSQL 16.3 and PHP 8.4/8.5 containers.
+Docker-based setup with PostgreSQL 16.3 and PHP 8.5/8.6 containers.
 
 ```bash
 make build          # Build Docker images
 make up             # Start PostgreSQL + PHP containers
 make install        # Install composer dependencies (PHP 8.5)
-make install-8.4    # Install composer dependencies (PHP 8.4)
+make install-8.6    # Install composer dependencies (PHP 8.6)
 ```
 
 ## Common Commands
@@ -63,7 +63,7 @@ Key DTOs in `src/Serializer/DTO/`: `ResultTransformer` (transformation spec with
 
 ## Testing
 
-- PHPUnit 10.5+ with `#[Test]` and `#[CoversClass]` attributes
+- PHPUnit 13.4+ with `#[Test]` and `#[CoversClass]` attributes
 - Tests run against a real PostgreSQL database (no mocks for DB)
 - Base class: `ConnectionTestCase` sets up Doctrine DBAL connection from `.env`
 - Test DTOs in `tests/Test/DTO/` and value objects in `tests/Test/ValueObject/`

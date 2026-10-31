@@ -92,7 +92,7 @@ final class ProfilingTracerTest extends ConnectionTestCase
 
         // -- Act
         $line = __LINE__ + 1;
-        $decodingConnection->fetchInt('SELECT 1');
+        (void) $decodingConnection->fetchInt('SELECT 1');
 
         // -- Assert
         $trace = $this->tracer->traces()[0];
@@ -113,7 +113,7 @@ final class ProfilingTracerTest extends ConnectionTestCase
 
         // -- Act
         $line = __LINE__ + 1;
-        $deserializingConnection->findOneFromSingleValue('SELECT 1 WHERE false', UserId::class);
+        (void) $deserializingConnection->findOneFromSingleValue('SELECT 1 WHERE false', UserId::class);
 
         // -- Assert
         $trace = $this->tracer->traces()[0];
