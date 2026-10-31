@@ -29,8 +29,7 @@ final readonly class ResultTransformers implements \IteratorAggregate
         $propertyNames = [];
         $renameTos = [];
         foreach ($resultTransformers as $resultTransformer) {
-            $levels = explode('.', $resultTransformer->key->value);
-            $propertyNames[] = $levels[count($levels) - 1];
+            $propertyNames[] = array_last(explode('.', $resultTransformer->key->value));
             if ($resultTransformer->renameTo !== null) {
                 $renameTos[] = $resultTransformer->renameTo;
             }

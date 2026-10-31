@@ -38,6 +38,7 @@ final readonly class DeserializingConnection
      *
      * @return T|null
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function findOne(
         string $sql,
         string $class,
@@ -108,6 +109,7 @@ final readonly class DeserializingConnection
      * @throws \Throwable
      * @throws Exception\ElementNotFound
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function getOne(
         string $sql,
         string $class,
@@ -175,6 +177,7 @@ final readonly class DeserializingConnection
      *
      * @return T|null
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function findOneFromSingleValue(
         string $sql,
         string $class,
@@ -251,6 +254,7 @@ final readonly class DeserializingConnection
      * @throws \Throwable
      * @throws Exception\ElementNotFound
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function getOneFromSingleValue(
         string $sql,
         string $class,
@@ -324,6 +328,7 @@ final readonly class DeserializingConnection
      *
      * @return (I is null ? list<T> : array<string, T>)
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function findArray(
         string $sql,
         string $class,
@@ -406,6 +411,7 @@ final readonly class DeserializingConnection
      *
      * @return \Generator<int, T>
      */
+    #[\NoDiscard('as the query is only executed when the generator is consumed')]
     public function findGenerator(
         string $sql,
         string $class,

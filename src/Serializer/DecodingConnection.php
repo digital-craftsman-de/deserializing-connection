@@ -30,6 +30,7 @@ final readonly class DecodingConnection
      *
      * @return array<string, mixed>|null
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function fetchOne(
         string $sql,
         array $parameters = [],
@@ -74,6 +75,7 @@ final readonly class DecodingConnection
      *
      * @return array<string, mixed>|null
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function fetchAssociative(
         string $sql,
         array $parameters = [],
@@ -112,6 +114,7 @@ final readonly class DecodingConnection
      * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
      * @param array<string, DTO\DecoderType>                                          $decoderTypes
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function fetchAllAssociative(
         string $sql,
         array $parameters = [],
@@ -133,20 +136,13 @@ final readonly class DecodingConnection
 
             self::decodeResults($result, $decoderTypes);
 
-            if ($indexedBy === null) {
-                $trace->recordDecodedResult($result);
+            $decodedResult = $indexedBy !== null
+                ? array_column($result, null, $indexedBy)
+                : $result;
 
-                return $result;
-            }
+            $trace->recordDecodedResult($decodedResult);
 
-            $resultWithIndex = [];
-            foreach ($result as $row) {
-                $resultWithIndex[$row[$indexedBy]] = $row;
-            }
-
-            $trace->recordDecodedResult($resultWithIndex);
-
-            return $resultWithIndex;
+            return $decodedResult;
         } catch (\Throwable $exception) {
             $trace->recordException($exception);
 
@@ -158,6 +154,7 @@ final readonly class DecodingConnection
      * @param list<mixed>|array<string, mixed>                                        $parameters
      * @param array<int<0, max>|string, ArrayParameterType|ParameterType|Type|string> $parameterTypes
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function fetchFirstColumn(
         string $sql,
         array $parameters = [],
@@ -197,6 +194,7 @@ final readonly class DecodingConnection
      * @throws Exception\QueryDidNotReturnExactlyOneResult
      * @throws Exception\QueryDidNotReturnAnInt
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function fetchInt(
         string $sql,
         array $parameters = [],
@@ -234,6 +232,7 @@ final readonly class DecodingConnection
      * @throws Exception\QueryDidNotReturnExactlyOneResult
      * @throws Exception\QueryDidNotReturnABoolean
      */
+    #[\NoDiscard('as the result of the query would be lost')]
     public function fetchBool(
         string $sql,
         array $parameters = [],

@@ -69,7 +69,7 @@ final class DeserializingConnectionTracingTest extends ConnectionTestCase
         $resultTransformers = self::nameToUpperCaseTransformers();
 
         // -- Act
-        $this->deserializingConnection->findOne(
+        (void) $this->deserializingConnection->findOne(
             sql: self::COMPANIES_SQL,
             class: Company::class,
             parameters: [
@@ -101,7 +101,7 @@ final class DeserializingConnectionTracingTest extends ConnectionTestCase
     public function find_one_without_result_is_traced(): void
     {
         // -- Act
-        $this->deserializingConnection->findOne(
+        (void) $this->deserializingConnection->findOne(
             sql: self::COMPANIES_SQL,
             class: Company::class,
             parameters: [
@@ -124,7 +124,7 @@ final class DeserializingConnectionTracingTest extends ConnectionTestCase
         $resultTransformers = self::nameToUpperCaseTransformers();
 
         // -- Act
-        $this->deserializingConnection->getOne(
+        (void) $this->deserializingConnection->getOne(
             sql: self::COMPANIES_SQL,
             class: Company::class,
             parameters: [
@@ -156,7 +156,7 @@ final class DeserializingConnectionTracingTest extends ConnectionTestCase
         $resultTransformer = self::plusFiveTransformer();
 
         // -- Act
-        $this->deserializingConnection->findOneFromSingleValue(
+        (void) $this->deserializingConnection->findOneFromSingleValue(
             sql: "SELECT '15'",
             class: Duration::class,
             decoderType: DTO\DecoderType::INT,
@@ -183,7 +183,7 @@ final class DeserializingConnectionTracingTest extends ConnectionTestCase
     public function find_one_from_single_value_without_result_is_traced(): void
     {
         // -- Act
-        $this->deserializingConnection->findOneFromSingleValue(
+        (void) $this->deserializingConnection->findOneFromSingleValue(
             sql: 'SELECT 1 WHERE false',
             class: Duration::class,
         );
@@ -203,7 +203,7 @@ final class DeserializingConnectionTracingTest extends ConnectionTestCase
         $resultTransformer = self::plusFiveTransformer();
 
         // -- Act
-        $this->deserializingConnection->getOneFromSingleValue(
+        (void) $this->deserializingConnection->getOneFromSingleValue(
             sql: "SELECT '15'",
             class: Duration::class,
             decoderType: DTO\DecoderType::INT,
@@ -233,7 +233,7 @@ final class DeserializingConnectionTracingTest extends ConnectionTestCase
         $resultTransformers = self::nameToUpperCaseTransformers();
 
         // -- Act
-        $this->deserializingConnection->findArray(
+        (void) $this->deserializingConnection->findArray(
             sql: self::COMPANIES_SQL,
             class: Company::class,
             parameters: [
@@ -274,7 +274,7 @@ final class DeserializingConnectionTracingTest extends ConnectionTestCase
     public function find_array_with_index_is_traced(): void
     {
         // -- Act
-        $this->deserializingConnection->findArray(
+        (void) $this->deserializingConnection->findArray(
             sql: self::COMPANIES_SQL,
             class: Company::class,
             parameters: [

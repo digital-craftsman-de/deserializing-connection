@@ -3,21 +3,21 @@
   "description": "Get DTOs directly from the database",
   "type": "symfony-bundle",
   "require": {
-    "php": "8.4.*|8.5.*",
-    "digital-craftsman/self-aware-normalizers": "^1.2.0",
-    "doctrine/dbal": "^4.4",
+    "php": "8.5.*|8.6.*",
+    "digital-craftsman/self-aware-normalizers": "^1.4.0",
+    "doctrine/dbal": "^4.5",
     "doctrine/sql-formatter": "^1.5",
     "symfony/framework-bundle": "^7.4|^8.0",
     "symfony/serializer": "^7.4|^8.0"
   },
   "require-dev": {
-    "friendsofphp/php-cs-fixer": "^v3.69.0",
-    "digital-craftsman/ids": "^2.3.0",
-    "infection/infection": "0.29.*",
-    "phpunit/phpunit": "^10.5",
+    "friendsofphp/php-cs-fixer": "^3.95",
+    "digital-craftsman/ids": "^2.5.0",
+    "infection/infection": "^0.35",
+    "phpunit/phpunit": "^13.4",
     "symfony/property-access": "^7.4|^8.0",
     "symfony/property-info": "^7.4|^8.0",
-    "vimeo/psalm": "^6.7.1"
+    "vimeo/psalm": "^6.20"
   },
   "autoload": {
     "psr-4": {

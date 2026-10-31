@@ -1,30 +1,93 @@
-# Get DTOs directly from the database
+# Deserializing connection
 
-A Symfony bundle to get DTOs directly from the database. It's a simple and efficient way to get data from the database and convert it into DTOs without to much noise in your code.  
+Write plain SQL, get typed DTOs back. One method call executes the query, decodes the database values (like JSON or booleans) and denormalizes the result into your read models through the Symfony serializer – without an ORM, without hydration code and without losing any type information.
 
-As it's a central part of an application, it's tested thoroughly (including mutation testing).
-
-[![Latest Stable Version](https://img.shields.io/badge/stable-0.9.0-blue)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
-[![PHP Version Require](https://img.shields.io/badge/php-8.4|8.5-5b5d95)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
+[![Latest Stable Version](https://img.shields.io/badge/stable-1.0.0-blue)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
+[![PHP Version Require](https://img.shields.io/badge/php-8.5|8.6-5b5d95)](https://packagist.org/packages/digital-craftsman/deserializing-connection)
 [![codecov](https://codecov.io/gh/digital-craftsman-de/deserializing-connection/branch/main/graph/badge.svg?token=BL0JKZYLBG)](https://codecov.io/gh/digital-craftsman-de/deserializing-connection)
 ![Packagist Downloads](https://img.shields.io/packagist/dt/digital-craftsman/deserializing-connection)
 ![Packagist License](https://img.shields.io/packagist/l/digital-craftsman/deserializing-connection)
 
-## Installation and configuration
+## Why?
 
-Install package through composer:
+Read models are usually built in one of two ways: through an ORM, which loads full entities and a lot of data you don't need, or through raw SQL, which leaves you with untyped arrays and a lot of mapping code. This bundle combines the best of both:
+
+- **Full power of SQL.** Use CTEs, window functions, `jsonb_agg` and everything else your database offers. Load a complete nested read model with a single query instead of N+1 queries.
+- **No mapping code.** No `json_decode`, no casting of strings to integers or booleans, no `new User(...)` with array lookups. You describe what you need, the bundle does the rest.
+- **Type safe.** All methods are generic. `getOne(class: User::class)` returns a `User` – Psalm and PHPStan know that, and so does your IDE.
+- **Transparent.** A Symfony profiler panel shows every query with its parameters inlined (ready to copy and run), the result after every step and the duration of every step.
+- **Reliable.** It's a central part of an application, so it's tested thoroughly against a real PostgreSQL database, including mutation testing with 100% MSI.
+
+### Before and after
+
+Without this bundle:
+
+```php
+$row = $this->connection->fetchAssociative(
+    'SELECT user_id, name, accessible_projects FROM users WHERE user_id = :userId',
+    ['userId' => (string) $userId],
+);
+
+if ($row === false) {
+    throw new UserNotFound($userId);
+}
+
+$user = new User(
+    userId: UserId::fromString($row['user_id']),
+    name: $row['name'],
+    accessibleProjects: ProjectIdList::fromArray(
+        json_decode($row['accessible_projects'], true, 512, JSON_THROW_ON_ERROR),
+    ),
+);
+```
+
+With this bundle:
+
+```php
+$user = $this->deserializingConnection->getOne(
+    sql: <<<'SQL'
+        SELECT
+            user_id AS "userId",
+            name,
+            accessible_projects AS "accessibleProjects"
+        FROM users
+        WHERE user_id = :userId
+        SQL,
+    class: User::class,
+    parameters: [
+        'userId' => $userId,
+    ],
+    decoderTypes: [
+        'accessibleProjects' => DecoderType::JSON,
+    ],
+    otherwiseThrow: static fn () => new UserNotFound($userId),
+);
+```
+
+The mapping is defined once in the DTO (see [Normalizers](#normalizers)) and reused for every query, the API and the database.
+
+## Installation
+
+Requires PHP 8.5 or 8.6, Symfony 7.4 or 8 and Doctrine DBAL 4.
 
 ```shell
 composer require digital-craftsman/deserializing-connection
 ```
 
-> ⚠️ This bundle can be used (and is being used) in production, but hasn't reached version 1.0 yet. Therefore, there will be breaking changes between minor versions. I'd recommend that you require the bundle only with the current minor version like `composer require digital-craftsman/deserializing-connection:0.9.*`. Breaking changes are described in the releases and [the changelog](./CHANGELOG.md). Updates are described in the [upgrade guide](./UPGRADE.md).
+The services are registered automatically and can be injected through autowiring. The bundle follows [semantic versioning](https://semver.org). Updates are described in the [upgrade guide](./UPGRADE.md).
+
+## How it works
+
+Every method of the `DeserializingConnection` runs the same pipeline:
+
+1. **Query** – The SQL is executed through the Doctrine DBAL connection with the given parameters and parameter types.
+2. **Decode** – Database values are converted into PHP types through [decoder types](#decoder-types) (e.g. a JSON string into an array).
+3. **Transform** – Optional [result transformers](#result-transformers) rename keys or compute values that can't be computed in SQL.
+4. **Denormalize** – The result is denormalized into the given class through the Symfony serializer.
 
 ## Usage
 
 ### Deserializing connection
-
-When you want DTOs, read models or value objects, you can use the `DeserializingConnection` to get them directly from the database. 
 
 Given the following DTO:
 
@@ -40,39 +103,22 @@ final readonly class User
 }
 ```
 
-A call for one might look like this:
+The column names in the SQL must match the keys the denormalizer expects. Use aliases like `user_id AS "userId"` for this.
 
-```php
-$user = $this->deserializingConnection->getOne(
-    sql: <<<'SQL'
-        SELECT
-            user_id AS "userId",
-            name,
-            accessible_projects AS "accessibleProjects"
-        FROM
-            `user`
-        WHERE user_id = :userId
-        SQL,
-    class: User::class,
-    parameters: [
-        'userId' => $userId,
-    ],
-    decoderTypes: [
-        'accessibleProjects' => DecoderType::JSON,
-    ],
-);
-```
+These are the available methods:
 
-These are the offered methods:
+| Method | Returns | When nothing is found |
+|---|---|---|
+| `getOne` | One object | Throws `ElementNotFound` (or a custom exception) |
+| `findOne` | One object or `null` | Returns `null` |
+| `getOneFromSingleValue` | One object from a single column | Throws `ElementNotFound` (or a custom exception) |
+| `findOneFromSingleValue` | One object from a single column or `null` | Returns `null` |
+| `findArray` | A list of objects (or an array indexed by a custom key) | Returns an empty array |
+| `findGenerator` | A generator yielding the objects | Yields nothing |
 
-- `getOne` to return one object or an exception when no result is found.
-- `findOne` like `getOne`, but returns `null` when no result is found.
-- `getOneFromSingleValue` to return one object from a single value or an exception when no result is found.
-- `findOneFromSingleValue` like `getOneFromSingleValue`, but returns `null` when no result is found.
-- `findArray` to return an array of objects.
-- `findGenerator` to return a generator that yields the objects.
+#### Custom exceptions
 
-By default, `getOne` and `getOneFromSingleValue` throw an `ElementNotFound` exception when no result is found. You can supply a callable through `otherwiseThrow` to throw a custom exception instead:
+By default, `getOne` and `getOneFromSingleValue` throw an `ElementNotFound` exception when no result is found. Supply a callable through `otherwiseThrow` to throw your own exception instead:
 
 ```php
 $user = $this->deserializingConnection->getOne(
@@ -85,15 +131,15 @@ $user = $this->deserializingConnection->getOne(
 );
 ```
 
-You can use `getOneFromSingleValue` when the denormalization step needs a single value instead of an associative array. This could look like this:
+#### Single values
+
+Use `getOneFromSingleValue` or `findOneFromSingleValue` when the denormalization needs a single value instead of an associative array, for example for value objects:
 
 ```php
 $duration = $this->deserializingConnection->getOneFromSingleValue(
     sql: <<<'SQL'
-        SELECT
-            duration
-        FROM
-            project
+        SELECT duration
+        FROM projects
         WHERE project_id = :projectId
         SQL,
     class: Duration::class,
@@ -103,49 +149,77 @@ $duration = $this->deserializingConnection->getOneFromSingleValue(
 );
 ```
 
-### Decoding types
+#### Lists
 
-Part of the magic is the conversion from database types to PHP types. For example, when your SQL returns a JSON string, you usually need to convert it into an associative array prior to serialization. Here you just need to supply `decoderTypes` with the column name and the type of decoder you want to use. There are utilities that can handle nullable values or create a empty array when a JSON returns null (relevant for `jsonb_agg` calls). These are the available decoder types which are all pretty self-explanatory:
-
-- `BOOL`
-- `NULLABLE_BOOL`
-- `INT`
-- `NULLABLE_INT`
-- `FLOAT`
-- `NULLABLE_FLOAT`
-- `JSON`
-- `NULLABLE_JSON`
-- `JSON_WITH_EMPTY_ARRAY_ON_NULL`
-
-Decoder types can also target nested values with the same key syntax as the result transformers. Levels are separated with a dot `.` and all items of a list are targeted with `*`:
+`findArray` returns a list of objects. With `indexedBy`, the list is indexed by a key of your choice:
 
 ```php
-decoderTypes: [
-    'projects' => DecoderType::JSON,
-    'projects.*.timeEntries.*.hours' => DecoderType::NULLABLE_FLOAT,
-],
+$usersById = $this->deserializingConnection->findArray(
+    sql: 'SELECT user_id AS "userId", name, accessible_projects AS "accessibleProjects" FROM users',
+    class: User::class,
+    decoderTypes: [
+        'accessibleProjects' => DecoderType::JSON,
+    ],
+    indexedBy: static fn (User $user): string => (string) $user->userId,
+);
 ```
 
-Parent values are always decoded before the values nested in them, independent of the order in which they are defined. Missing keys and `null` values on the way to the nested value are ignored. Decoding is done before the result transformers are run.
+`findGenerator` yields the objects one after another. The query is only executed when the generator is consumed.
 
-### Decoding connection
+#### Unused results
 
-When you want to get a scalar value or do more complex stuff, you can use the underlying `DecodingConnection`. It offers the following methods:
+All methods of the `DeserializingConnection` and the `DecodingConnection` are marked with `#[\NoDiscard]`. When you call one of them without using the result, PHP emits a warning – most likely a bug, especially for the generator, which wouldn't even run the query. To check whether a row exists, use `DecodingConnection->fetchBool` with an `EXISTS` query instead of `getOne`. If you really don't need the result, use the `(void)` cast.
 
-- `fetchOne`
-- `fetchAssociative`
-- `fetchAllAssociative`
-- `fetchFirstColumn`
-- `fetchInt`
-- `fetchBool`
+### Decoder types
 
-`fetchInt` and `fetchBool` will throw custom exceptions when there are no values or they are not of the expected type.
+Most database drivers return everything that isn't a string, integer or boolean as a string. Decoder types convert those values into the PHP types the denormalizer expects. Define them through `decoderTypes` with the column name as key:
+
+| Decoder type | Result | Result for `null` |
+|---|---|---|
+| `BOOL` | `bool` | `false` |
+| `NULLABLE_BOOL` | `bool` | `null` |
+| `INT` | `int` | `false` |
+| `NULLABLE_INT` | `int` | `null` |
+| `FLOAT` | `float` | `false` |
+| `NULLABLE_FLOAT` | `float` | `null` |
+| `JSON` | `array` | Exception |
+| `NULLABLE_JSON` | `array` | `null` |
+| `JSON_WITH_EMPTY_ARRAY_ON_NULL` | `array` | `[]` (useful for `jsonb_agg`, which returns `null` instead of an empty array) |
+
+#### Nested values
+
+Decoder types can also target values nested within a JSON column. Levels are separated with a dot `.` and all items of a list are targeted with `*`. This way a complete nested read model can be loaded with one query:
+
+```php
+$companies = $this->deserializingConnection->findArray(
+    sql: <<<'SQL'
+        SELECT
+            companies.name,
+            (
+                SELECT jsonb_agg(jsonb_build_object(
+                    'name', projects.name,
+                    'timeEntries', projects.time_entries
+                ))
+                FROM projects
+                WHERE projects.company_id = companies.company_id
+            ) AS projects
+        FROM companies
+        SQL,
+    class: CompanyWithProjects::class,
+    decoderTypes: [
+        'projects' => DecoderType::JSON_WITH_EMPTY_ARRAY_ON_NULL,
+        'projects.*.timeEntries.*.hours' => DecoderType::NULLABLE_FLOAT,
+    ],
+);
+```
+
+Parent values are always decoded before the values nested in them, independent of the order in which they are defined. Missing keys and `null` values on the way to the nested value are ignored.
 
 ### Result transformers
 
-There are cases where you're not able to do everything in the SQL query. For example when you want to calculate a value based on data of the environment or information that is only available on runtime. In those cases, you can use result transformers to run callbacks before the data is deserialized into the DTO.
+Some values can't be computed in SQL, for example because they depend on services or information only available at runtime. Result transformers run callbacks on the decoded result before it's denormalized.
 
-This can look like this for the following DTO:
+Given the following DTO:
 
 ```php
 final readonly class User
@@ -153,64 +227,109 @@ final readonly class User
     public function __construct(
         public UserId $userId,
         public string $name,
-        public string $companyLink,
+        public string $companyUrl,
     ) {
     }
 }
 ```
 
+The company id is selected from the database, denormalized into a `CompanyId`, transformed into a URL and renamed to `companyUrl`:
+
 ```php
-$this->deserializingConnection->getOne(
+$user = $this->deserializingConnection->getOne(
     sql: <<<'SQL'
         SELECT
             user_id AS "userId",
             name,
-            companyLink
-        FROM
-            `user`
+            company_id AS "companyId"
+        FROM users
         WHERE user_id = :userId
         SQL,
-    class: ReadModel\User::class,
+    class: User::class,
     parameters: [
         'userId' => $userId,
     ],
-    decoderTypes: [
-        'company' => DecoderType::JSON,
-    ],
     resultTransformers: [
         ResultTransformer::toTransformAndRename(
-            key: 'companyLink',
-            denormalizeResultToClass: CompanyLink::class,
-            transformer: fn(CompanyLink $companyLink) => $this->router->generate(
+            key: 'companyId',
+            denormalizeResultToClass: CompanyId::class,
+            transformer: fn (CompanyId $companyId): string => $this->router->generate(
                 'company_show',
                 [
-                    'companyId' => $companyLink->companyId,
+                    'companyId' => (string) $companyId,
                 ],
             ),
             isTransformedResultNormalized: false,
-            renameTo: 'link',
+            renameTo: 'companyUrl',
         ),
     ],
 );
 ```
 
-The available variants of `ResultTransformer` are:
+There are three variants:
 
-- `toTransform`
-- `toRename`
-- `toTransformAndRename`
+| Factory method | Effect |
+|---|---|
+| `ResultTransformer::toTransform` | Replaces the value with the result of the transformer. |
+| `ResultTransformer::toRename` | Renames the key. |
+| `ResultTransformer::toTransformAndRename` | Both of the above. |
 
-The "rename" variants are simply renaming the property into the supplied name.
+The parameters of the transformer:
 
-Additional documentation for the key (how it can be used in a multi level result and for arrays) can be found in the [`ResultTransformerKey class`](./src/Serializer/DTO/ResultTransformerKey.php). 
+- `denormalizeResultToClass` – When a class is given, the value is denormalized into it before it's passed to the transformer. `null` values aren't denormalized.
+- `transformer` – A closure receiving the value, the array of the current level and the complete result: `fn (mixed $value, array $resultOfLevel, array $result): mixed`.
+- `isTransformedResultNormalized` – When `true`, the returned object is normalized again (useful when the transformer returns an object which is denormalized into the DTO afterward).
+
+The key uses the same syntax as the nested decoder types (e.g. `user.projects.*.name`). It's always relative to a single row, so with `findArray` you don't need to start the key with `*`. Additional documentation can be found in the [`ResultTransformerKey`](./src/Serializer/DTO/ResultTransformerKey.php) class.
+
+### Decoding connection
+
+When you only need scalar values or arrays, use the underlying `DecodingConnection`. It wraps the Doctrine DBAL connection and supports the same decoder types:
+
+| Method | Returns |
+|---|---|
+| `fetchOne` | The first value of the first row (decoded with an optional decoder type) or `null` |
+| `fetchAssociative` | The first row as an associative array or `null` |
+| `fetchAllAssociative` | All rows as associative arrays (optionally indexed by a column through `indexedBy`) |
+| `fetchFirstColumn` | The values of the first column |
+| `fetchInt` | An `int`, throws an exception when there isn't exactly one result or it isn't an integer |
+| `fetchBool` | A `bool`, throws an exception when there isn't exactly one result or it isn't a boolean |
 
 ### Normalizers
 
-For easier normalization, use the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package which is required by this package.
+The denormalization is done through the Symfony serializer. The easiest way to make your value objects and DTOs denormalizable is through the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package, which is required by this bundle. With it, your classes normalize and denormalize themselves through simple interfaces, and the same classes can also be used as Doctrine types:
 
-### Doctrine types
+```php
+final readonly class User implements ArrayNormalizable
+{
+    public function __construct(
+        public UserId $userId,
+        public string $name,
+        public ProjectIdList $accessibleProjects,
+    ) {
+    }
 
-For easier doctrine types, use the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package which is required by this package.
+    public static function denormalize(array $data): self
+    {
+        return new self(
+            userId: UserId::denormalize($data['userId']),
+            name: $data['name'],
+            accessibleProjects: ProjectIdList::denormalize($data['accessibleProjects']),
+        );
+    }
+
+    public function normalize(): array
+    {
+        return [
+            'userId' => $this->userId->normalize(),
+            'name' => $this->name,
+            'accessibleProjects' => $this->accessibleProjects->normalize(),
+        ];
+    }
+}
+```
+
+Any other normalizer registered in the Symfony serializer works as well.
 
 ### Symfony profiler
 

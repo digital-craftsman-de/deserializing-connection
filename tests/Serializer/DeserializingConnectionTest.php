@@ -177,7 +177,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $this->expectException(DTO\Exception\ConflictBetweenKeysAndRenameToConfiguration::class);
 
         // -- Act
-        $this->deserializingConnection->findOne(
+        (void) $this->deserializingConnection->findOne(
             sql: <<<'SQL'
                 WITH empty_table AS (
                     SELECT 1
@@ -304,7 +304,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $this->expectException(Exception\ElementNotFound::class);
 
         // -- Act
-        $this->deserializingConnection->getOne(
+        (void) $this->deserializingConnection->getOne(
             sql: <<<'SQL'
                 WITH empty_table AS (
                     SELECT 1
@@ -364,7 +364,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $this->expectException(UserNotFound::class);
 
         // -- Act
-        $this->deserializingConnection->getOne(
+        (void) $this->deserializingConnection->getOne(
             sql: <<<'SQL'
                 WITH empty_table AS (
                     SELECT 1
@@ -458,7 +458,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $this->expectException(Exception\SingleValueTransformationMustNotContainRenaming::class);
 
         // -- Act
-        $this->deserializingConnection->findOneFromSingleValue(
+        (void) $this->deserializingConnection->findOneFromSingleValue(
             sql: <<<'SQL'
                 WITH empty_table AS (
                     SELECT 1
@@ -535,7 +535,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $this->expectException(Exception\ElementNotFound::class);
 
         // -- Act
-        $this->deserializingConnection->getOneFromSingleValue(
+        (void) $this->deserializingConnection->getOneFromSingleValue(
             sql: <<<'SQL'
                 WITH empty_table AS (
                     SELECT 1
@@ -580,7 +580,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $this->expectException(UserNotFound::class);
 
         // -- Act
-        $this->deserializingConnection->getOneFromSingleValue(
+        (void) $this->deserializingConnection->getOneFromSingleValue(
             sql: <<<'SQL'
                 WITH empty_table AS (
                     SELECT 1
@@ -601,7 +601,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $this->expectException(Exception\SingleValueTransformationMustNotContainRenaming::class);
 
         // -- Act
-        $this->deserializingConnection->getOneFromSingleValue(
+        (void) $this->deserializingConnection->getOneFromSingleValue(
             sql: <<<'SQL'
                 WITH empty_table AS (
                     SELECT 1
@@ -742,7 +742,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         /**
          * @psalm-suppress InvalidArgument Provided on purpose to test the exception
          */
-        $this->deserializingConnection->findArray(
+        (void) $this->deserializingConnection->findArray(
             sql: <<<'SQL'
                 SELECT
                         user_id AS "userId",
@@ -956,7 +956,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $this->expectException(Exception\DecoderTypeKeyLevelIsNotAnArray::class);
 
         // -- Act
-        $this->deserializingConnection->findOne(
+        (void) $this->deserializingConnection->findOne(
             sql: <<<'SQL'
                 SELECT
                     'Stark Industries' AS name,
@@ -976,7 +976,7 @@ final class DeserializingConnectionTest extends ConnectionTestCase
         $this->expectException(DTO\Exception\ResultTransformationKeyCanNotEndWithAnArrayIdentifier::class);
 
         // -- Act
-        $this->deserializingConnection->findOne(
+        (void) $this->deserializingConnection->findOne(
             sql: <<<'SQL'
                 SELECT
                     'Stark Industries' AS name,

@@ -1172,6 +1172,39 @@ final class DecodingConnectionTest extends ConnectionTestCase
     }
 
     #[Test]
+    public function decode_item_decodes_values_of_elements_only_once_even_when_an_element_has_an_asterisk_as_key(): void
+    {
+        // -- Arrange
+        $item = [
+            'projects' => '{"*": {"settings": "{\\"isArchived\\": true}"}}',
+        ];
+        $decoderTypes = [
+            'projects' => DTO\DecoderType::JSON,
+            'projects.*.settings' => DTO\DecoderType::JSON,
+        ];
+
+        // -- Act
+        DecodingConnection::decodeItem(
+            item: $item,
+            decoderTypes: $decoderTypes,
+        );
+
+        // -- Assert
+        self::assertSame(
+            [
+                'projects' => [
+                    '*' => [
+                        'settings' => [
+                            'isArchived' => true,
+                        ],
+                    ],
+                ],
+            ],
+            $item,
+        );
+    }
+
+    #[Test]
     public function decode_item_ignores_null_values_on_the_way_to_the_nested_value(): void
     {
         // -- Arrange
