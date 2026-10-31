@@ -64,7 +64,7 @@ $user = $this->deserializingConnection->getOne(
 );
 ```
 
-The mapping is defined once in the DTO (see [Normalizers](#normalizers)) and reused for every query, the API and the database.
+The DTO itself doesn't need any mapping code. Only value objects like `UserId` define once how they are normalized (see [Normalizers](#normalizers)), and that definition is reused for every query, the API and the database.
 
 ## Installation
 
@@ -222,36 +222,36 @@ Some values can't be computed in SQL, for example because they depend on service
 Given the following DTO:
 
 ```php
-final readonly class User
+final readonly class Company
 {
     public function __construct(
-        public UserId $userId,
-        public string $name,
-        public string $companyUrl,
+        public CompanyId $companyId,
+        public CompanyName $name,
+        public string $url,
     ) {
     }
 }
 ```
 
-The company id is selected from the database, denormalized into a `CompanyId`, transformed into a URL and renamed to `companyUrl`:
+The company id is selected a second time as `url`, denormalized into a `CompanyId` and transformed into the URL of the company:
 
 ```php
-$user = $this->deserializingConnection->getOne(
+$company = $this->deserializingConnection->getOne(
     sql: <<<'SQL'
         SELECT
-            user_id AS "userId",
+            company_id AS "companyId",
             name,
-            company_id AS "companyId"
-        FROM users
-        WHERE user_id = :userId
+            company_id AS url
+        FROM companies
+        WHERE company_id = :companyId
         SQL,
-    class: User::class,
+    class: Company::class,
     parameters: [
-        'userId' => $userId,
+        'companyId' => $companyId,
     ],
     resultTransformers: [
-        ResultTransformer::toTransformAndRename(
-            key: 'companyId',
+        ResultTransformer::toTransform(
+            key: 'url',
             denormalizeResultToClass: CompanyId::class,
             transformer: fn (CompanyId $companyId): string => $this->router->generate(
                 'company_show',
@@ -260,7 +260,6 @@ $user = $this->deserializingConnection->getOne(
                 ],
             ),
             isTransformedResultNormalized: false,
-            renameTo: 'companyUrl',
         ),
     ],
 );
@@ -297,37 +296,34 @@ When you only need scalar values or arrays, use the underlying `DecodingConnecti
 
 ### Normalizers
 
-The denormalization is done through the Symfony serializer. The easiest way to make your value objects and DTOs denormalizable is through the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package, which is required by this bundle. With it, your classes normalize and denormalize themselves through simple interfaces, and the same classes can also be used as Doctrine types:
+The denormalization is done through the Symfony serializer. DTOs like the `Company` above don't need any configuration: the serializer creates them through their constructor and denormalizes every parameter depending on its type.
+
+Only value objects need to define how they are normalized and denormalized. The easiest way is the [`digital-craftsman/self-aware-normalizers`](https://github.com/digital-craftsman-de/self-aware-normalizers) package, which is required by this bundle. Implement one of its interfaces and the value object is denormalized automatically wherever it's used – in every DTO and every query:
 
 ```php
-final readonly class User implements ArrayNormalizable
+final readonly class CompanyName implements StringNormalizable
 {
     public function __construct(
-        public UserId $userId,
-        public string $name,
-        public ProjectIdList $accessibleProjects,
+        public string $value,
     ) {
+        if (trim($value) === '') {
+            throw new CompanyNameMustNotBeEmpty();
+        }
     }
 
-    public static function denormalize(array $data): self
+    public static function denormalize(string $data): self
     {
-        return new self(
-            userId: UserId::denormalize($data['userId']),
-            name: $data['name'],
-            accessibleProjects: ProjectIdList::denormalize($data['accessibleProjects']),
-        );
+        return new self($data);
     }
 
-    public function normalize(): array
+    public function normalize(): string
     {
-        return [
-            'userId' => $this->userId->normalize(),
-            'name' => $this->name,
-            'accessibleProjects' => $this->accessibleProjects->normalize(),
-        ];
+        return $this->value;
     }
 }
 ```
+
+There are interfaces for `string`, `int`, `float`, `bool` and `array` values. The same value objects can also be used as Doctrine types. Ids like `CompanyId` can be created through [`digital-craftsman/ids`](https://github.com/digital-craftsman-de/ids), which builds on the same interfaces.
 
 Any other normalizer registered in the Symfony serializer works as well.
 
